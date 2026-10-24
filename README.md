@@ -13,7 +13,7 @@ RISC-V 64, without depending on the official `libpkcs11-dnie.so`
 | F2 — Base stack on aarch64 | ✅ T1–T6 validated with the real card |
 | F3 — PKCS#11 shim | ✅ x86-64, aarch64 and riscv64 |
 | F4 — Autofirma | ✅ XAdES/PAdES signing on both architectures |
-| F5 — riscv64 | ✅ installed and validated (no reader yet) |
+| F5 — riscv64 | ✅ T1–T6 validated with the real card |
 | F6 — DNIe 4.0 coverage | 🟡 OpenSC accepts the 4.0 ATR; PIN test pending |
 | F7 — Packaging | 🟡 Arch package ready; Debian via script |
 | F8 — Validation and docs | 🟡 report and docs ready; real T1–T9 pending |

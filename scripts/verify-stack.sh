@@ -44,7 +44,7 @@ if [ "${readers:-0}" -gt 0 ]; then
 else
   bad "no reader detected (connect a CCID reader over USB)"
   if command -v lsusb >/dev/null 2>&1 && lsusb 2>/dev/null | grep -qiE 'smartcard|smart card|058f:9540'; then
-    warn "USB smartcard reader present but PC/SC cannot see it; check polkit access_pcsc (see docs/02-aarch64.md)"
+    warn "USB smartcard reader present but PC/SC cannot see it; check polkit access_pcsc and plugdev group membership (see docs/02-aarch64.md)"
   fi
 fi
 

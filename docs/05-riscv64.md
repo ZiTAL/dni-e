@@ -2,7 +2,7 @@
 
 **Host:** RISC-V board · StarFive VisionFive 2 · Debian 13 (trixie) · kernel 6.6.20
 **Date:** 2026-10-24
-**Status:** ✅ stack installed and validated (physical reader missing)
+**Status:** ✅ stack and reader validated (T1–T6); signing pending certificate renewal
 
 ---
 
@@ -35,10 +35,43 @@ Real resolution:
 ```text
 dnie-compat: conf=/etc/dnie-compat.conf module=(none) search=(none) multiarch=riscv64-linux-gnu
 dnie-compat: probando /usr/lib/riscv64-linux-gnu/opensc-pkcs11.so
-No slots.
 ```
 
-## 3. Autofirma
+## 3. polkit and group membership
+
+pcscd authorizes clients through polkit. The rule
+`/etc/polkit-1/rules.d/50-pcscd.rules` allows the `plugdev` group, and the user
+must belong to it. On this board `zital` was not in `plugdev`; adding it fixed
+the "reader invisible" problem:
+
+```bash
+sudo usermod -aG plugdev zital
+sudo systemctl restart polkit
+```
+
+`scripts/setup-debian.sh` now installs the rule **and** adds `$SUDO_USER` to
+`plugdev`.
+
+## 4. Reader and card validated
+
+```
+Reader 0: Alcor Micro AU9540 00 00
+Card state: Card inserted
+ATR: 3B 7F 96 00 00 00 6A 44 4E 49 65 10 01 01 55 04 21 03 90 00
+OpenSC: dnie
+Certificates: CertAutenticacion, CertFirmaDigital, CertCAIntermediaDGP
+```
+
+| Test | Result |
+|---|---|
+| T1 — `pcsc_scan` detects the reader | ✅ `Alcor Micro AU9540` |
+| T2 — DNIe ATR | ✅ `3B 7F 96 …` |
+| T3 — `opensc-tool -n` | ✅ `dnie` |
+| T4 — `pkcs15-tool --list-certificates` | ✅ 3 certificates |
+| T5 — `pkcs11-tool -L/-O` through the shim | ✅ token `DNI electrónico` |
+| T6 — NSS (Firefox layer) lists the certificates | ✅ 3 certs (`tests/test-nss.sh`) |
+
+## 5. Autofirma
 
 System Java: **OpenJDK 25.0.4.1 (riscv64)**.
 
@@ -52,12 +85,7 @@ Deployed in `~/autofirma` with the launcher adapted to Java 25.
 | PKCS#11 store signing (SoftHSM) | ✅ 5,115 B |
 | GUI | ⏳ requires Xvfb/X11 (not installed) |
 
-SoftHSM was extracted without root with `apt-get download` + `dpkg -x`, and the
-token was initialised with `pkcs11-tool --init-token` (the packaged
-`softhsm2-util` has the module path compiled in and could not find the copy in
-`$HOME`).
-
-## 4. Shim tests
+## 6. Shim tests
 
 `tests/test-shim-paths.sh`: **21/21**.
 
@@ -67,17 +95,7 @@ token was initialised with `pkcs11-tool --init-token` (the packaged
 | aarch64 | ✅ 21/21 |
 | riscv64 | ✅ 21/21 |
 
-## 5. Missing
+## 7. Missing
 
-1. **USB reader on this board.** The polkit rule is already installed
-   (`/etc/polkit-1/rules.d/50-pcscd.rules`), so the reader should be visible as
-   soon as it is connected. The single available reader is currently validated
-   on the ARM64 board.
-2. **Valid certificates** for T7–T9.
-
-## 6. polkit note
-
-On headless or SSH sessions, pcscd denies `access_pcsc` unless the
-`plugdev` group is authorized. The rule from
-`packaging/polkit/50-pcscd.rules` is installed by `scripts/setup-debian.sh`.
-See [02-aarch64.md](02-aarch64.md#3-polkit-required-on-headless--ssh-access).
+Only **valid certificates** for T7–T9. They expired on 2024-10-18 and renewal is
+in person.

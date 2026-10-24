@@ -43,7 +43,9 @@ Rejected unauthorized PC/SC client
 ```
 
 Fix installed at `/etc/polkit-1/rules.d/50-pcscd.rules` (template:
-`packaging/polkit/50-pcscd.rules`), allowing the `plugdev` group:
+`packaging/polkit/50-pcscd.rules`), allowing the `plugdev` group. The user must
+also belong to `plugdev`; `scripts/setup-debian.sh` adds `$SUDO_USER` to the
+group when needed.
 
 ```javascript
 polkit.addRule(function(action, subject) {
@@ -55,8 +57,8 @@ polkit.addRule(function(action, subject) {
 });
 ```
 
-Then `systemctl restart polkit`. `scripts/setup-debian.sh` installs it
-automatically.
+Then `systemctl restart polkit`. `scripts/setup-debian.sh` installs the rule and
+the group membership automatically.
 
 ## 4. Reader and card validated
 

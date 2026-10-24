@@ -270,12 +270,12 @@ documented coexistence with the official module.
 
 | # | Test | x86-64 | aarch64 | riscv64 | Needs PIN |
 |---|---|---|---|---|---|
-| T1 | `pcsc_scan` detects reader | ✅ | ✅ | | no |
-| T2 | DNIe ATR | ✅ | ✅ | | no |
-| T3 | `opensc-tool -n` = `dnie` | ✅ | ✅ | | no |
-| T4 | `pkcs15-tool --list-certificates` (3 certs) | ✅ | ✅ | | no |
-| T5 | `pkcs11-tool -L/-O` through the shim | ✅ | ✅ | | no |
-| T6 | Firefox lists the certificates | | ✅ | | no |
+| T1 | `pcsc_scan` detects reader | ✅ | ✅ | ✅ | no |
+| T2 | DNIe ATR | ✅ | ✅ | ✅ | no |
+| T3 | `opensc-tool -n` = `dnie` | ✅ | ✅ | ✅ | no |
+| T4 | `pkcs15-tool --list-certificates` (3 certs) | ✅ | ✅ | ✅ | no |
+| T5 | `pkcs11-tool -L/-O` through the shim | ✅ | ✅ | ✅ | no |
+| T6 | Firefox lists the certificates | | ✅ | ✅ | no |
 | T7 | TLS authentication on a site | | | | **yes** |
 | T8 | PDF signing with Autofirma | | | | **yes** |
 | T9 | Signing through PKCS#11 (`C_Sign`) | | | | **yes** |

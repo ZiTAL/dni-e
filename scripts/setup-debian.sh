@@ -16,12 +16,22 @@ apt-get update
 DEBIAN_FRONTEND=noninteractive apt-get install -y \
   pcscd libccid pcsc-tools opensc opensc-pkcs11 p11-kit libnss3-tools
 
-echo "== 2/5 polkit rule (headless / remote access) =="
+echo "== 2/5 polkit rule and group (headless / remote access) =="
 if [ -d /etc/polkit-1/rules.d ]; then
   install -Dm644 "$root/packaging/polkit/50-pcscd.rules" \
     /etc/polkit-1/rules.d/50-pcscd.rules
-  systemctl try-restart polkit 2>/dev/null || true
   echo "installed: /etc/polkit-1/rules.d/50-pcscd.rules (group plugdev)"
+
+  if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
+    if ! id -nG "$SUDO_USER" 2>/dev/null | tr ' ' '\n' | grep -qx plugdev; then
+      usermod -aG plugdev "$SUDO_USER"
+      echo "added $SUDO_USER to the plugdev group"
+    fi
+  else
+    echo "SUDO_USER not set; make sure your user belongs to plugdev"
+  fi
+
+  systemctl try-restart polkit 2>/dev/null || true
 else
   echo "polkit rules.d not found; skipped"
 fi
