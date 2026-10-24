@@ -2,13 +2,13 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # build-release.sh — build a release tarball for the current architecture.
 #
-# Usage: VERSION=0.1.0 ./scripts/build-release.sh
+# Usage: VERSION=0.2.1 ./scripts/build-release.sh
 # Output: dist/dnie-pkcs11-compat-<version>-<arch>.tar.gz (+ .sha256)
 set -euo pipefail
 
 ROOT_DIR=$(cd "$(dirname "$0")/.." && pwd)
 SHIM_DIR="$ROOT_DIR/src/pkcs11-shim"
-VERSION="${VERSION:-0.1.0}"
+VERSION="${VERSION:-0.2.1}"
 ARCH="${ARCH:-$(uname -m)}"
 CC="${CC:-cc}"
 

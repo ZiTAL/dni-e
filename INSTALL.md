@@ -1,4 +1,4 @@
-# DNIe on Linux — installation (v0.2.0)
+# DNIe on Linux — installation (v0.2.1)
 
 This document covers the prebuilt packages (aarch64, riscv64, x86-64) and a
 source install. The goal is a working DNIe stack: reader, PKCS#11 module,
@@ -15,12 +15,12 @@ browsers and optional document signing with Autofirma.
 
 | Architecture | Tarball | Debian package |
 |---|---|---|
-| ARM64 | `dnie-pkcs11-compat-0.2.0-aarch64.tar.gz` | `dnie-pkcs11-compat_0.2.0_arm64.deb` |
-| RISC-V 64 | `dnie-pkcs11-compat-0.2.0-riscv64.tar.gz` | `dnie-pkcs11-compat_0.2.0_riscv64.deb` |
-| x86-64 | `dnie-pkcs11-compat-0.2.0-x86_64.tar.gz` | — |
-| ARMv7 (32-bit) | `dnie-pkcs11-compat-0.2.0-armv7l.tar.gz` | — |
-| ppc64le | `dnie-pkcs11-compat-0.2.0-ppc64le.tar.gz` | — |
-| s390x | `dnie-pkcs11-compat-0.2.0-s390x.tar.gz` | — |
+| ARM64 | `dnie-pkcs11-compat-0.2.1-aarch64.tar.gz` | `dnie-pkcs11-compat_0.2.1_arm64.deb` |
+| RISC-V 64 | `dnie-pkcs11-compat-0.2.1-riscv64.tar.gz` | `dnie-pkcs11-compat_0.2.1_riscv64.deb` |
+| x86-64 | `dnie-pkcs11-compat-0.2.1-x86_64.tar.gz` | `dnie-pkcs11-compat_0.2.1_amd64.deb` |
+| ARMv7 (32-bit) | `dnie-pkcs11-compat-0.2.1-armv7l.tar.gz` | — |
+| ppc64le | `dnie-pkcs11-compat-0.2.1-ppc64le.tar.gz` | — |
+| s390x | `dnie-pkcs11-compat-0.2.1-s390x.tar.gz` | — |
 
 Also attached: `SHA256SUMS`, `SHA256SUMS.asc` and `dnie-release-key.asc`.
 
@@ -41,7 +41,7 @@ Key fingerprint: `90E9197F3D36A666A8AF35FB99B38DA239882575`.
 ```bash
 sudo apt-get update
 sudo apt-get install -y opensc p11-kit pcscd
-sudo dpkg -i dnie-pkcs11-compat_0.2.0_arm64.deb
+sudo dpkg -i dnie-pkcs11-compat_0.2.1_arm64.deb
 sudo apt-get -f install
 ```
 
@@ -52,8 +52,8 @@ registration. It does not install Autofirma.
 ## Option B — release tarball (no compiler)
 
 ```bash
-tar xzf dnie-pkcs11-compat-0.2.0-aarch64.tar.gz
-cd dnie-pkcs11-compat-0.2.0-aarch64
+tar xzf dnie-pkcs11-compat-0.2.1-aarch64.tar.gz
+cd dnie-pkcs11-compat-0.2.1-aarch64
 sudo ./install.sh --binary --system
 ```
 

@@ -15,8 +15,8 @@ Download the asset for `uname -m` from the
 
 ```bash
 sha256sum -c SHA256SUMS --ignore-missing
-tar xzf dnie-pkcs11-compat-0.1.0-aarch64.tar.gz
-cd dnie-pkcs11-compat-0.1.0-aarch64
+tar xzf dnie-pkcs11-compat-0.2.1-aarch64.tar.gz
+cd dnie-pkcs11-compat-0.2.1-aarch64
 sudo ./install.sh --binary --system
 ```
 
@@ -39,7 +39,7 @@ On Debian and derivatives, the release also provides a `.deb`:
 
 ```bash
 sudo apt-get install -y opensc p11-kit pcscd
-sudo dpkg -i dnie-pkcs11-compat_0.2.0_arm64.deb
+sudo dpkg -i dnie-pkcs11-compat_0.2.1_arm64.deb
 sudo apt-get -f install
 ```
 

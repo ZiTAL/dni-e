@@ -16,7 +16,7 @@
 
 (package
   (name "dnie-pkcs11-compat")
-  (version "0.1.0")
+  (version "0.2.1")
   (source
    (local-file "." "dni-e-checkout"
                #:recursive? #t

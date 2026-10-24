@@ -34,9 +34,9 @@ sudo apt-get install -y gcc-riscv64-linux-gnu gcc-arm-linux-gnueabihf \
   libc6-dev-riscv64-cross libc6-dev-armhf-cross \
   libc6-dev-ppc64el-cross libc6-dev-s390x-cross
 
-ARCH=armv7l CC=arm-linux-gnueabihf-gcc VERSION=0.2.0 ./scripts/build-release.sh
-ARCH=ppc64le CC=powerpc64le-linux-gnu-gcc VERSION=0.2.0 ./scripts/build-release.sh
-ARCH=s390x CC=s390x-linux-gnu-gcc VERSION=0.2.0 ./scripts/build-release.sh
+ARCH=armv7l CC=arm-linux-gnueabihf-gcc VERSION=0.2.1 ./scripts/build-release.sh
+ARCH=ppc64le CC=powerpc64le-linux-gnu-gcc VERSION=0.2.1 ./scripts/build-release.sh
+ARCH=s390x CC=s390x-linux-gnu-gcc VERSION=0.2.1 ./scripts/build-release.sh
 ```
 
 `libc6-dev-*-cross` is required: without it the cross compiler falls back to the
@@ -104,7 +104,7 @@ big-endian build and load confirm it.
 
 ## 6. Release assets
 
-`v0.2.0` publishes tarballs for:
+`v0.2.1` publishes tarballs for:
 
 - aarch64, riscv64, x86-64 (native builds);
 - armv7l, ppc64le, s390x (cross builds);
