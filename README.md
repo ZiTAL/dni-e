@@ -107,6 +107,7 @@ Findings and fixes are listed in [PLAN.md](PLAN.md#8-security-hardening).
 
 ## Documentation
 
+- [NEXT-STEPS.md](NEXT-STEPS.md) — handover checklist for after certificate renewal
 - [INSTALL.md](INSTALL.md) — installation guide (releases and source)
 - [docs/00-environment.md](docs/00-environment.md) — host, versions and baseline
 - [docs/01-matrix.md](docs/01-matrix.md) — availability per architecture

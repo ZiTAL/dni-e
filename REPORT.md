@@ -172,3 +172,11 @@ Then:
 - Arch shim package: `packaging/arch/`.
 - Debian setup: `scripts/setup-debian.sh`.
 - Tests: `tests/test-shim-paths.sh`, `scripts/verify-*.sh`.
+
+---
+
+## Handover
+
+The stack is complete up to T6. The only pending work is certificate renewal
+and the T7–T9 validation. See [NEXT-STEPS.md](NEXT-STEPS.md) for the exact
+post-renewal checklist, commands and known risks.
