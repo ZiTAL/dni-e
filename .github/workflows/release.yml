@@ -24,28 +24,35 @@ jobs:
           - arch: x86_64
             cc: cc
             pkg: ''
+            dev: ''
           - arch: aarch64
             cc: aarch64-linux-gnu-gcc
             pkg: gcc-aarch64-linux-gnu
+            dev: libc6-dev-arm64-cross
           - arch: riscv64
             cc: riscv64-linux-gnu-gcc
             pkg: gcc-riscv64-linux-gnu
+            dev: libc6-dev-riscv64-cross
           - arch: armv7l
             cc: arm-linux-gnueabihf-gcc
             pkg: gcc-arm-linux-gnueabihf
+            dev: libc6-dev-armhf-cross
           - arch: ppc64le
             cc: powerpc64le-linux-gnu-gcc
             pkg: gcc-powerpc64le-linux-gnu
+            dev: libc6-dev-ppc64el-cross
           - arch: s390x
             cc: s390x-linux-gnu-gcc
             pkg: gcc-s390x-linux-gnu
+            dev: libc6-dev-s390x-cross
     steps:
       - uses: actions/checkout@v4
 
       - name: Install toolchain
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends build-essential file ${{ matrix.pkg }}
+          sudo apt-get install -y --no-install-recommends build-essential file \
+            ${{ matrix.pkg }} ${{ matrix.dev }}
 
       - name: Build release tarball
         env:
