@@ -23,9 +23,9 @@ for cmd in pcscd pcsc_scan opensc-tool pkcs11-tool pkcs15-tool; do
 done
 
 echo "== PKCS#11 module =="
-module=$(ls /usr/lib/opensc-pkcs11.so /usr/lib/*/opensc-pkcs11.so /usr/lib64/opensc-pkcs11.so 2>/dev/null | head -1)
+module=$(find /usr/lib /usr/lib64 -maxdepth 2 -name opensc-pkcs11.so -print -quit 2>/dev/null)
 if [ -n "$module" ]; then ok "$module"; else bad "opensc-pkcs11.so not found"; fi
-module_file=$(ls /usr/share/p11-kit/modules/opensc*.module 2>/dev/null | head -1)
+module_file=$(find /usr/share/p11-kit/modules -maxdepth 1 -name 'opensc*.module' -print -quit 2>/dev/null)
 if [ -n "$module_file" ]; then ok "p11-kit registration ($module_file)"; else warn "no p11-kit registration"; fi
 
 echo "== Compatibility shim =="

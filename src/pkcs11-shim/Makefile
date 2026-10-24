@@ -29,6 +29,7 @@ SOFLAGS := -shared -Wl,-soname,libpkcs11-dnie.so \
 LDLIBS  := -ldl -pthread
 LDFLAGS ?=
 DESTDIR ?=
+FNMT_ALIAS ?= 1
 
 TARGET  := libpkcs11-dnie.so
 
@@ -45,6 +46,9 @@ test: $(TARGET)
 
 install: $(TARGET)
 	install -Dm755 $(TARGET) $(DESTDIR)$(LIBDIR)/$(TARGET)
+	if [ "$(FNMT_ALIAS)" = "1" ]; then \
+	  ln -sf $(TARGET) $(DESTDIR)$(LIBDIR)/libpkcs11-fnmtdnie.so; \
+	fi
 	install -d $(DESTDIR)$(P11KIT_MODULEDIR)
 	sed 's|@LIBDIR@|$(LIBDIR)|g' dnie-compat.module.in \
 	  > $(DESTDIR)$(P11KIT_MODULEDIR)/dnie-compat.module
@@ -53,6 +57,7 @@ install: $(TARGET)
 
 uninstall:
 	rm -f $(DESTDIR)$(LIBDIR)/$(TARGET)
+	rm -f $(DESTDIR)$(LIBDIR)/libpkcs11-fnmtdnie.so
 	rm -f $(DESTDIR)$(P11KIT_MODULEDIR)/dnie-compat.module
 	rm -f $(DESTDIR)$(DOCDIR)/dnie-compat.conf.example
 

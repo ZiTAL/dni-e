@@ -1,5 +1,7 @@
 # DNIe on aarch64 and riscv64
 
+[![ci](https://github.com/ZiTAL/dni-e/actions/workflows/ci.yml/badge.svg)](https://github.com/ZiTAL/dni-e/actions/workflows/ci.yml)
+
 Native stack for the Spanish electronic ID (**DNIe**) on Linux ARM64 and
 RISC-V 64, without depending on the official `libpkcs11-dnie.so`
 (closed-source, x86-64 only).
@@ -17,6 +19,26 @@ RISC-V 64, without depending on the official `libpkcs11-dnie.so`
 | F6 — DNIe 4.0 coverage | 🟡 OpenSC accepts the 4.0 ATR; PIN test pending |
 | F7 — Packaging | 🟡 Arch package ready; Debian via script |
 | F8 — Validation and docs | 🟡 report and docs ready; real T1–T9 pending |
+
+## Install (any Linux, any architecture)
+
+```bash
+git clone https://github.com/ZiTAL/dni-e.git
+cd dni-e
+sudo ./install.sh --system
+```
+
+The installer detects the package manager, installs OpenSC, pcsc-lite and ccid
+when needed, builds the shim for the current architecture, registers it with
+p11-kit, configures polkit/plugdev, and can wire browsers and Autofirma. User
+prefix, dry-run and uninstall are supported:
+
+```bash
+./install.sh --prefix "$HOME/.local"
+sudo ./install.sh --system --uninstall
+```
+
+Full matrix and options: [docs/08-universal-install.md](docs/08-universal-install.md).
 
 ## How it works
 
@@ -73,6 +95,7 @@ Findings and fixes are listed in [PLAN.md](PLAN.md#8-security-hardening).
 - [docs/05-riscv64.md](docs/05-riscv64.md) — RISC-V deployment
 - [docs/06-dnie4.md](docs/06-dnie4.md) — DNIe 4.0 coverage in OpenSC
 - [docs/07-portability.md](docs/07-portability.md) — FHS, Guix and Nix
+- [docs/08-universal-install.md](docs/08-universal-install.md) — installer for any Linux and architecture
 - [REPORT.md](REPORT.md) — autonomous session report
 
 ## License

@@ -24,7 +24,9 @@ status=0
   echo
   echo "===== verify-card ====="
   ./scripts/verify-card.sh || status=1
+  exit "$status"
 } 2>&1 | tee "$out"
+status=${PIPESTATUS[0]}
 
 echo
 echo "Result archived at: $out"

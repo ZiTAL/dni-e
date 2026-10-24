@@ -28,7 +28,7 @@ if [ -z "$TOOL" ]; then
   exit 2
 fi
 
-MODULE=$(ls /usr/lib/opensc-pkcs11.so /usr/lib/*/opensc-pkcs11.so /usr/lib64/opensc-pkcs11.so 2>/dev/null | head -1)
+MODULE=$(find /usr/lib /usr/lib64 -maxdepth 2 -name opensc-pkcs11.so -print -quit 2>/dev/null)
 if [ -z "$MODULE" ]; then
   echo "  ❌ opensc-pkcs11.so not found"
   exit 2

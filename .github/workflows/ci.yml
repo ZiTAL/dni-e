@@ -1,0 +1,61 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential opensc pcscd libccid pcsc-tools shellcheck
+
+      - name: Build shim
+        run: make -C src/pkcs11-shim
+
+      - name: ShellCheck
+        run: |
+          shellcheck -S warning install.sh scripts/*.sh tests/*.sh \
+            packaging/arch/build-local.sh
+
+      - name: Shim tests (21 cases)
+        run: ./tests/test-shim-paths.sh
+
+      - name: Installer dry-run
+        run: ./install.sh --dry-run --no-browser
+
+  test-arm64:
+    runs-on: ubuntu-24.04-arm
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential opensc pcscd libccid pcsc-tools shellcheck
+
+      - name: Build shim
+        run: make -C src/pkcs11-shim
+
+      - name: ShellCheck
+        run: |
+          shellcheck -S warning install.sh scripts/*.sh tests/*.sh \
+            packaging/arch/build-local.sh
+
+      - name: Shim tests (21 cases)
+        run: ./tests/test-shim-paths.sh
+
+      - name: Installer dry-run
+        run: ./install.sh --dry-run --no-browser

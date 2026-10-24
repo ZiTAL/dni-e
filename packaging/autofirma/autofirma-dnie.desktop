@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Autofirma (DNIe)
+Comment=Spanish electronic signature client
+Exec=@PREFIX@/bin/autofirma-dnie
+Icon=autofirma
+Terminal=false
+Categories=Office;Security;
+MimeType=x-scheme-handler/afirma;

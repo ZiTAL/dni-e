@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-3.0-or-later
+# autofirma-launcher — run the Autofirma jar with any Java >= 17.
+#
+# Installed by install.sh as <prefix>/bin/autofirma-dnie, with the jar at
+# <prefix>/share/java/autofirma/autofirma.jar. The AUTOFIRMA_JAR environment
+# variable can point to another jar.
+set -euo pipefail
+
+self_dir=$(cd "$(dirname "$0")" && pwd)
+prefix=$(dirname "$self_dir")
+jar="${AUTOFIRMA_JAR:-$prefix/share/java/autofirma/autofirma.jar}"
+
+if [ ! -f "$jar" ]; then
+  echo "Autofirma jar not found: $jar" >&2
+  echo "Install it with: install.sh --autofirma-jar /path/to/autofirma.jar" >&2
+  exit 1
+fi
+
+java_major() {
+  "$1" -version 2>&1 | awk -F'"' '/version/ {print $2}' |
+    awk -F. '{ if ($1 == 1) print $2; else print $1 }' || true
+}
+
+candidates=()
+if [ -n "${JAVA_HOME:-}" ]; then
+  candidates+=("$JAVA_HOME/bin/java")
+fi
+for candidate in /usr/lib/jvm/*/bin/java /usr/java/*/bin/java \
+                 /opt/java/*/bin/java /opt/*/bin/java; do
+  [ -x "$candidate" ] && candidates+=("$candidate")
+done
+if command -v java >/dev/null 2>&1; then
+  candidates+=("$(command -v java)")
+fi
+
+for candidate in "${candidates[@]}"; do
+  [ -x "$candidate" ] || continue
+  major=$(java_major "$candidate")
+  case "$major" in
+    ''|*[!0-9]*) continue ;;
+  esac
+  if [ "$major" -ge 17 ]; then
+    exec "$candidate" -jar "$jar" "$@"
+  fi
+done
+
+echo "No Java >= 17 found. Install a JRE 17+ (for example openjdk-21-jre)." >&2
+exit 1

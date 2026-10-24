@@ -266,6 +266,24 @@ documented coexistence with the official module.
 
 ---
 
+### F9 — Universal installation
+
+**Tasks**
+- `install.sh` with package-manager detection (`apt`, `dnf`, `yum`, `pacman`,
+  `zypper`, `apk`, `xbps-install`, `emerge`), prefix/system modes, dry-run and
+  uninstall.
+- `libpkcs11-fnmtdnie.so` alias for FNMT guides.
+- Browser setup (Firefox profiles and Chrome NSS database) with backups.
+- Portable Autofirma launcher that accepts any Java >= 17.
+- polkit rule and `plugdev` membership automation.
+
+**Deliverable:** `install.sh`, `scripts/setup-browser.sh`,
+`packaging/autofirma/`, `docs/08-universal-install.md`.
+**Acceptance:** install and uninstall on x86-64, aarch64 and riscv64; 21 shim
+tests pass; no architecture-specific code.
+
+---
+
 ## 6. Test matrix
 
 | # | Test | x86-64 | aarch64 | riscv64 | Needs PIN |
@@ -382,8 +400,10 @@ dni-e/
 │   ├── 04-autofirma.md
 │   ├── 05-riscv64.md
 │   ├── 06-dnie4.md
-│   └── 07-portability.md
+│   ├── 07-portability.md
+│   └── 08-universal-install.md
 ├── guix.scm
+├── install.sh
 ├── src/
 │   └── pkcs11-shim/
 │       ├── Makefile
@@ -392,12 +412,16 @@ dni-e/
 │       └── dnie-compat.conf.example
 ├── packaging/
 │   ├── arch/
-│   └── debian/
+│   ├── autofirma/
+│   ├── debian/
+│   └── polkit/
 ├── scripts/
 │   ├── verify-stack.sh
 │   ├── verify-card.sh
+│   ├── setup-browser.sh
 │   └── setup-debian.sh
 └── tests/
+    ├── test-nss.sh
     ├── test-shim-paths.sh
     ├── test-shim-threads.c
     └── run-matrix.sh
@@ -417,6 +441,7 @@ dni-e/
 8. F6: DNIe 4.0 coverage (only if gaps exist).
 9. F7: packages.
 10. F8: documentation, signed matrix and upstream.
+11. F9: universal installer, browser setup and portable Autofirma.
 
 ---
 
