@@ -15,3 +15,7 @@ packaging/arch/*.tar.gz
 reference/
 
 __pycache__/
+
+# Release build artifacts
+prebuilt/
+dist/

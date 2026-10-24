@@ -2,6 +2,9 @@
 
 [![ci](https://github.com/ZiTAL/dni-e/actions/workflows/ci.yml/badge.svg)](https://github.com/ZiTAL/dni-e/actions/workflows/ci.yml)
 
+Prebuilt releases for **aarch64**, **riscv64** and x86_64 are published on the
+[releases page](https://github.com/ZiTAL/dni-e/releases).
+
 Native stack for the Spanish electronic ID (**DNIe**) on Linux ARM64 and
 RISC-V 64, without depending on the official `libpkcs11-dnie.so`
 (closed-source, x86-64 only).
@@ -21,6 +24,17 @@ RISC-V 64, without depending on the official `libpkcs11-dnie.so`
 | F8 — Validation and docs | 🟡 report and docs ready; real T1–T9 pending |
 
 ## Install (any Linux, any architecture)
+
+From a release tarball (no compiler needed):
+
+```bash
+sha256sum -c SHA256SUMS --ignore-missing
+tar xzf dnie-pkcs11-compat-0.1.0-aarch64.tar.gz
+cd dnie-pkcs11-compat-0.1.0-aarch64
+sudo ./install.sh --binary --system
+```
+
+From source:
 
 ```bash
 git clone https://github.com/ZiTAL/dni-e.git
@@ -87,6 +101,7 @@ Findings and fixes are listed in [PLAN.md](PLAN.md#8-security-hardening).
 
 ## Documentation
 
+- [INSTALL.md](INSTALL.md) — installation guide (releases and source)
 - [docs/00-environment.md](docs/00-environment.md) — host, versions and baseline
 - [docs/01-matrix.md](docs/01-matrix.md) — availability per architecture
 - [docs/02-aarch64.md](docs/02-aarch64.md) — ARM64 deployment

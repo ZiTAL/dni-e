@@ -26,6 +26,7 @@ DO_BROWSER=1
 DO_AUTOFIRMA=0
 AUTOFIRMA_JAR=""
 UNINSTALL=0
+BINARY=0
 
 TARGET_USER="${SUDO_USER:-$(id -un)}"
 TARGET_HOME=$(getent passwd "$TARGET_USER" 2>/dev/null | cut -d: -f6 || true)
@@ -56,6 +57,7 @@ Options:
   --no-browser             Do not add the module to Firefox/Chrome
   --no-autofirma           Do not install Autofirma (default)
   --autofirma-jar FILE     Install Autofirma from an existing jar
+  --binary                 Use the prebuilt module in prebuilt/ (release tarball)
   --dry-run                Show actions without changing anything
   --uninstall              Remove files installed by this script
   -h, --help               Show this help
@@ -77,6 +79,7 @@ while [ $# -gt 0 ]; do
     --no-deps) DO_DEPS=0 ;;
     --no-browser) DO_BROWSER=0 ;;
     --no-autofirma) DO_AUTOFIRMA=0 ;;
+    --binary) BINARY=1 ;;
     --autofirma-jar)
       [ $# -ge 2 ] || die "--autofirma-jar requires a file"
       AUTOFIRMA_JAR="$2"
@@ -236,6 +239,30 @@ build_and_install_shim() {
   run_prefix make -C "$SHIM_DIR" install PREFIX="$PREFIX"
 }
 
+install_prebuilt_shim() {
+  local src="$ROOT_DIR/prebuilt/libpkcs11-dnie.so"
+  local module_conf="$PREFIX/share/p11-kit/modules/dnie-compat.module"
+  local tmp
+
+  [ -f "$src" ] || die "prebuilt module not found: $src"
+
+  say "installing prebuilt module into $PREFIX"
+  run_prefix install -Dm755 "$src" "$PREFIX/lib/libpkcs11-dnie.so"
+  run_prefix ln -sf libpkcs11-dnie.so "$PREFIX/lib/libpkcs11-fnmtdnie.so"
+
+  if [ "$DRY_RUN" -eq 1 ]; then
+    printf '    [dry-run] generate %s\n' "$module_conf"
+  else
+    tmp=$(mktemp)
+    sed "s|@LIBDIR@|$PREFIX/lib|g" "$SHIM_DIR/dnie-compat.module.in" > "$tmp"
+    run_prefix install -Dm644 "$tmp" "$module_conf"
+    rm -f "$tmp"
+  fi
+
+  run_prefix install -Dm644 "$SHIM_DIR/dnie-compat.conf.example" \
+    "$PREFIX/share/doc/dnie-pkcs11-compat/dnie-compat.conf.example"
+}
+
 setup_browser() {
   [ "$DO_BROWSER" -eq 1 ] || return 0
   local module="$PREFIX/lib/libpkcs11-dnie.so"
@@ -301,9 +328,12 @@ main() {
     install_deps
   fi
 
-  has_build || die "a C compiler (cc) and make are required"
-
-  build_and_install_shim
+  if [ "$BINARY" -eq 0 ]; then
+    has_build || die "a C compiler (cc) and make are required"
+    build_and_install_shim
+  else
+    install_prebuilt_shim
+  fi
   enable_service
   setup_polkit
   setup_browser

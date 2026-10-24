@@ -8,6 +8,20 @@ binaries.
 
 ## 1. Quick start
 
+### From a release tarball (no compiler)
+
+Download the asset for `uname -m` from the
+[releases page](https://github.com/ZiTAL/dni-e/releases), then:
+
+```bash
+sha256sum -c SHA256SUMS --ignore-missing
+tar xzf dnie-pkcs11-compat-0.1.0-aarch64.tar.gz
+cd dnie-pkcs11-compat-0.1.0-aarch64
+sudo ./install.sh --binary --system
+```
+
+### From source
+
 ```bash
 git clone https://github.com/ZiTAL/dni-e.git
 cd dni-e
@@ -32,6 +46,7 @@ Then:
 |---|---|
 | `--system` | Install into `/usr`, install packages and manage the service |
 | `--prefix DIR` | Install prefix (default `/usr/local`) |
+| `--binary` | Use the prebuilt module in `prebuilt/` (release tarballs) |
 | `--no-deps` | Do not install distribution packages |
 | `--no-browser` | Do not touch Firefox/Chrome NSS databases |
 | `--autofirma-jar FILE` | Install Autofirma from an existing jar |
