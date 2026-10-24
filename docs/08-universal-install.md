@@ -113,13 +113,16 @@ The shim is portable C and has been built for:
 | Architecture | Status |
 |---|---|
 | x86-64 | ✅ native |
-| i386 | ✅ `gcc -m32` |
-| aarch64 | ✅ native (Orange Pi 5) |
-| riscv64 | ✅ native (VisionFive 2) |
-| armv7, ppc64le, s390x | ⏳ buildable (OpenSC packaged by Debian) |
+| i386 | ✅ native `gcc -m32`; ⏳ no release asset |
+| aarch64 | ✅ native (Orange Pi 5) + musl/Alpine |
+| riscv64 | ✅ native (VisionFive 2) + musl/Alpine under QEMU |
+| armv7l | ✅ cross-built (release asset) |
+| ppc64le | ✅ cross-built (release asset) |
+| s390x | ✅ cross-built + musl/Alpine under QEMU (big-endian) |
 
 The real dependency is **OpenSC** for the target architecture. Debian trixie
 packages it for amd64, arm64, armel, armhf, i386, ppc64el, riscv64 and s390x.
+See [09-multiarch-validation.md](09-multiarch-validation.md).
 
 ## 6. Autofirma
 

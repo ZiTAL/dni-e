@@ -405,7 +405,8 @@ dni-e/
 │   ├── 05-riscv64.md
 │   ├── 06-dnie4.md
 │   ├── 07-portability.md
-│   └── 08-universal-install.md
+│   ├── 08-universal-install.md
+│   └── 09-multiarch-validation.md
 ├── guix.scm
 ├── install.sh
 ├── src/
@@ -423,7 +424,9 @@ dni-e/
 │   ├── verify-stack.sh
 │   ├── verify-card.sh
 │   ├── setup-browser.sh
-│   └── setup-debian.sh
+│   ├── setup-debian.sh
+│   ├── build-release.sh
+│   └── sign-release.sh
 └── tests/
     ├── test-nss.sh
     ├── test-shim-paths.sh

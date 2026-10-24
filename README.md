@@ -117,6 +117,7 @@ Findings and fixes are listed in [PLAN.md](PLAN.md#8-security-hardening).
 - [docs/06-dnie4.md](docs/06-dnie4.md) — DNIe 4.0 coverage in OpenSC
 - [docs/07-portability.md](docs/07-portability.md) — FHS, Guix and Nix
 - [docs/08-universal-install.md](docs/08-universal-install.md) — installer for any Linux and architecture
+- [docs/09-multiarch-validation.md](docs/09-multiarch-validation.md) — cross-build, musl and QEMU validation
 - [REPORT.md](REPORT.md) — autonomous session report
 
 ## License
