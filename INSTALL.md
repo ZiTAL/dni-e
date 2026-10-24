@@ -18,6 +18,9 @@ browsers and optional document signing with Autofirma.
 | ARM64 | `dnie-pkcs11-compat-0.2.0-aarch64.tar.gz` | `dnie-pkcs11-compat_0.2.0_arm64.deb` |
 | RISC-V 64 | `dnie-pkcs11-compat-0.2.0-riscv64.tar.gz` | `dnie-pkcs11-compat_0.2.0_riscv64.deb` |
 | x86-64 | `dnie-pkcs11-compat-0.2.0-x86_64.tar.gz` | — |
+| ARMv7 (32-bit) | `dnie-pkcs11-compat-0.2.0-armv7l.tar.gz` | — |
+| ppc64le | `dnie-pkcs11-compat-0.2.0-ppc64le.tar.gz` | — |
+| s390x | `dnie-pkcs11-compat-0.2.0-s390x.tar.gz` | — |
 
 Also attached: `SHA256SUMS`, `SHA256SUMS.asc` and `dnie-release-key.asc`.
 
