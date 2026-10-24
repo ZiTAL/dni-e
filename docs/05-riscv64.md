@@ -59,13 +59,13 @@ token was initialised with `pkcs11-tool --init-token` (the packaged
 
 ## 4. Shim tests
 
-`tests/test-shim-paths.sh`: **13/13**.
+`tests/test-shim-paths.sh`: **21/21**.
 
 | Architecture | Result |
 |---|---|
-| x86-64 | ✅ 13/13 |
-| aarch64 | ✅ 13/13 |
-| riscv64 | ✅ 13/13 |
+| x86-64 | ✅ 21/21 |
+| aarch64 | ✅ 21/21 |
+| riscv64 | ✅ 21/21 |
 
 ## 5. Missing
 

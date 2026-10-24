@@ -33,17 +33,36 @@
  *      Directories where opensc-pkcs11.so (and pkcs11/opensc-pkcs11.so) is
  *      searched for.
  *
- *   3. /etc/dnie-compat.conf  (path configurable via DNIE_COMPAT_CONF)
+ *   3. Configuration file, first match:
+ *        $DNIE_COMPAT_CONF
+ *        /etc/dnie-compat.conf
+ *        $XDG_CONFIG_HOME/dnie-compat.conf
+ *        $HOME/.config/dnie-compat.conf
  *      Keys: module=, search=, multiarch=
  *
  *   4. DNIE_COMPAT_MULTIARCH=aarch64-linux-gnu
  *      Tripleta used for /usr/lib/<tripleta>/... It overrides the one chosen
  *      at build time (make MULTIARCH=...).
  *
- *   5. Built-in paths and glob search under /usr/lib/<something>/.
+ *   5. DNIE_COMPAT_DEFAULT_MODULE (build time, make MODULE_PATH=...)
+ *      Module path embedded at build time; required on non-FHS systems
+ *      (Guix, Nix) where /usr/lib does not exist.
  *
- * Relative paths are ignored. DNIE_COMPAT_DEBUG=1 prints the resolved
- * configuration and every attempted path to stderr.
+ *   6. Built-in paths and glob search under /usr/lib/<something>/.
+ *
+ * Security notes:
+ *   - Environment and user configuration are ignored in secure-execution mode
+ *     (setuid/setgid), using secure_getenv(3).
+ *   - Relative paths are ignored.
+ *   - Configuration files must be regular files; when running as root they
+ *     must be root-owned and not group/other writable.
+ *   - Initialization is serialized with pthread_once(3), so concurrent
+ *     C_GetFunctionList/C_GetInterface calls are safe.
+ *   - Only C_GetFunctionList and C_GetInterface are exported
+ *     (-fvisibility=hidden).
+ *
+ * DNIE_COMPAT_DEBUG=1 prints the resolved configuration and every attempted
+ * path to stderr.
  */
 
 #define _GNU_SOURCE
@@ -51,10 +70,13 @@
 #include <dlfcn.h>
 #include <glob.h>
 #include <limits.h>
+#include <pthread.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 typedef unsigned long CK_RV;
 typedef CK_RV (*CK_GET_FUNCTION_LIST)(void **);
@@ -74,6 +96,12 @@ typedef CK_RV (*CK_GET_FUNCTION_LIST)(void **);
 #define DNIE_COMPAT_CONFIG_FILE "/etc/dnie-compat.conf"
 #endif
 
+#if defined(__GNUC__)
+#define DNIE_EXPORT __attribute__((visibility("default")))
+#else
+#define DNIE_EXPORT
+#endif
+
 typedef struct {
     char *module;
     char *search;
@@ -82,13 +110,23 @@ typedef struct {
 
 static void *g_module = NULL;
 static CK_GET_FUNCTION_LIST g_get_function_list = NULL;
-static CK_RV g_load_status = CKR_GENERAL_ERROR;
+static CK_RV g_init_status = CKR_GENERAL_ERROR;
+static pthread_once_t g_once = PTHREAD_ONCE_INIT;
 
 static char *g_candidates[MAX_CANDIDATES];
 static size_t g_candidate_count = 0;
 
+/* secure_getenv returns NULL when the process runs setuid/setgid. */
+static const char *env_get(const char *name) {
+#if defined(__linux__)
+    return secure_getenv(name);
+#else
+    return getenv(name);
+#endif
+}
+
 static int debug_enabled(void) {
-    const char *v = getenv("DNIE_COMPAT_DEBUG");
+    const char *v = env_get("DNIE_COMPAT_DEBUG");
     return v != NULL && v[0] != '\0' && v[0] != '0';
 }
 
@@ -118,6 +156,31 @@ static int is_absolute(const char *path) {
     return path != NULL && path[0] == '/';
 }
 
+/*
+ * A configuration file must be a regular file: refusing FIFOs and devices
+ * avoids blocking or reading from an unexpected source. When running as root
+ * it must also be root-owned and not writable by group or others.
+ */
+static int config_file_is_safe(const char *path) {
+    struct stat st;
+
+    if (path == NULL || stat(path, &st) != 0) {
+        return 0;
+    }
+    if (!S_ISREG(st.st_mode)) {
+        return 0;
+    }
+    if (geteuid() == 0) {
+        if (st.st_uid != 0) {
+            return 0;
+        }
+        if ((st.st_mode & (S_IWGRP | S_IWOTH)) != 0) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
 static void add_candidate(const char *path) {
     size_t i;
 
@@ -138,8 +201,22 @@ static void add_candidate(const char *path) {
     }
 }
 
-static void add_search_dirs(const char *list) {
+/* Join dir + relative path, ignoring the result if it would be truncated. */
+static void add_joined_candidate(const char *dir, const char *relative) {
     char buffer[PATH_MAX];
+    int written;
+
+    written = snprintf(buffer, sizeof(buffer), "%s/%s", dir, relative);
+    if (written < 0 || (size_t)written >= sizeof(buffer)) {
+        if (debug_enabled()) {
+            fprintf(stderr, "dnie-compat: path too long, ignored: %s\n", dir);
+        }
+        return;
+    }
+    add_candidate(buffer);
+}
+
+static void add_search_dirs(const char *list) {
     char *copy;
     char *save = NULL;
     char *token;
@@ -164,18 +241,56 @@ static void add_search_dirs(const char *list) {
             }
             continue;
         }
-        snprintf(buffer, sizeof(buffer), "%s/opensc-pkcs11.so", token);
-        add_candidate(buffer);
-        snprintf(buffer, sizeof(buffer), "%s/pkcs11/opensc-pkcs11.so", token);
-        add_candidate(buffer);
+        add_joined_candidate(token, "opensc-pkcs11.so");
+        add_joined_candidate(token, "pkcs11/opensc-pkcs11.so");
     }
     free(copy);
+}
+
+/*
+ * Select the configuration file. The explicit variable always wins, even if
+ * the file does not exist (so the diagnostic is meaningful). Otherwise, prefer
+ * the system file and fall back to the user configuration for non-FHS or
+ * unprivileged installs.
+ */
+static const char *select_config_path(void) {
+    static char user_path[PATH_MAX];
+    const char *explicit_path = env_get("DNIE_COMPAT_CONF");
+    const char *xdg;
+    const char *home;
+    int written;
+
+    if (explicit_path != NULL && explicit_path[0] != '\0') {
+        return explicit_path;
+    }
+    if (config_file_is_safe(DNIE_COMPAT_CONFIG_FILE)) {
+        return DNIE_COMPAT_CONFIG_FILE;
+    }
+
+    xdg = env_get("XDG_CONFIG_HOME");
+    home = env_get("HOME");
+    if (xdg != NULL && xdg[0] != '\0') {
+        written = snprintf(user_path, sizeof(user_path), "%s/dnie-compat.conf", xdg);
+    } else if (home != NULL && home[0] != '\0') {
+        written = snprintf(user_path, sizeof(user_path), "%s/.config/dnie-compat.conf", home);
+    } else {
+        return DNIE_COMPAT_CONFIG_FILE;
+    }
+
+    if (written > 0 && (size_t)written < sizeof(user_path) &&
+        config_file_is_safe(user_path)) {
+        return user_path;
+    }
+    return DNIE_COMPAT_CONFIG_FILE;
 }
 
 static void parse_config(const char *path, Config *config) {
     char line[2 * PATH_MAX];
     FILE *file;
 
+    if (!config_file_is_safe(path)) {
+        return;
+    }
     file = fopen(path, "r");
     if (file == NULL) {
         return;
@@ -210,23 +325,21 @@ static void parse_config(const char *path, Config *config) {
 }
 
 static void resolve_config(Config *config) {
-    const char *conf_path = getenv("DNIE_COMPAT_CONF");
+    const char *conf_path;
     const char *value;
 
-    if (conf_path == NULL || conf_path[0] == '\0') {
-        conf_path = DNIE_COMPAT_CONFIG_FILE;
-    }
+    conf_path = select_config_path();
     parse_config(conf_path, config);
 
-    value = getenv("DNIE_COMPAT_MODULE");
+    value = env_get("DNIE_COMPAT_MODULE");
     if (value != NULL && value[0] != '\0') {
         set_str(&config->module, value);
     }
-    value = getenv("DNIE_COMPAT_SEARCH_PATH");
+    value = env_get("DNIE_COMPAT_SEARCH_PATH");
     if (value != NULL && value[0] != '\0') {
         set_str(&config->search, value);
     }
-    value = getenv("DNIE_COMPAT_MULTIARCH");
+    value = env_get("DNIE_COMPAT_MULTIARCH");
     if (value != NULL && value[0] != '\0') {
         set_str(&config->multiarch, value);
     }
@@ -292,28 +405,18 @@ static CK_RV try_glob(const char *pattern) {
     return result;
 }
 
-static void add_multiarch_candidates(const char *multiarch) {
-    char buffer[PATH_MAX];
-
-    if (multiarch == NULL || multiarch[0] == '\0') {
-        return;
-    }
-    snprintf(buffer, sizeof(buffer), "/usr/lib/%s/opensc-pkcs11.so", multiarch);
-    add_candidate(buffer);
-    snprintf(buffer, sizeof(buffer), "/usr/lib/%s/pkcs11/opensc-pkcs11.so", multiarch);
-    add_candidate(buffer);
-    snprintf(buffer, sizeof(buffer), "/usr/lib64/%s/opensc-pkcs11.so", multiarch);
-    add_candidate(buffer);
-}
-
 static void add_default_candidates(void) {
+#ifdef DNIE_COMPAT_DEFAULT_MODULE
+    add_candidate(DNIE_COMPAT_DEFAULT_MODULE);
+#endif
     add_candidate("/usr/lib/opensc-pkcs11.so");
     add_candidate("/usr/lib64/opensc-pkcs11.so");
     add_candidate("/usr/lib/pkcs11/opensc-pkcs11.so");
     add_candidate("/usr/local/lib/opensc-pkcs11.so");
+    add_candidate("/run/current-system/sw/lib/opensc-pkcs11.so"); /* NixOS */
 }
 
-static CK_RV load_target(void) {
+static CK_RV load_target_unsafe(void) {
     static const char *const patterns[] = {
         "/usr/lib/*/opensc-pkcs11.so",
         "/usr/lib/*/pkcs11/opensc-pkcs11.so",
@@ -323,15 +426,11 @@ static CK_RV load_target(void) {
     Config config = {NULL, NULL, NULL};
     size_t i;
 
-    if (g_get_function_list != NULL) {
-        return CKR_OK;
-    }
-
     resolve_config(&config);
 
     /* 1. Exact path: authoritative. */
     if (is_absolute(config.module)) {
-        g_load_status = try_load(config.module);
+        g_init_status = try_load(config.module);
         goto finished;
     }
     if (config.module != NULL && config.module[0] != '\0' && debug_enabled()) {
@@ -340,14 +439,31 @@ static CK_RV load_target(void) {
 
     /* 2 and 3. Configured directories and multiarch tripleta. */
     add_search_dirs(config.search);
-    add_multiarch_candidates(config.multiarch);
+    if (config.multiarch != NULL && config.multiarch[0] != '\0') {
+        char prefix[PATH_MAX];
+        int written;
+        if (is_absolute(config.multiarch)) {
+            add_joined_candidate(config.multiarch, "opensc-pkcs11.so");
+            add_joined_candidate(config.multiarch, "pkcs11/opensc-pkcs11.so");
+        } else {
+            written = snprintf(prefix, sizeof(prefix), "/usr/lib/%s", config.multiarch);
+            if (written > 0 && (size_t)written < sizeof(prefix)) {
+                add_joined_candidate(prefix, "opensc-pkcs11.so");
+                add_joined_candidate(prefix, "pkcs11/opensc-pkcs11.so");
+            }
+            written = snprintf(prefix, sizeof(prefix), "/usr/lib64/%s", config.multiarch);
+            if (written > 0 && (size_t)written < sizeof(prefix)) {
+                add_joined_candidate(prefix, "opensc-pkcs11.so");
+            }
+        }
+    }
 
-    /* 4. Built-in paths. */
+    /* 4. Build-time default and built-in paths. */
     add_default_candidates();
 
     for (i = 0; i < g_candidate_count; i++) {
         if (try_load(g_candidates[i]) == CKR_OK) {
-            g_load_status = CKR_OK;
+            g_init_status = CKR_OK;
             goto finished;
         }
     }
@@ -355,7 +471,7 @@ static CK_RV load_target(void) {
     /* 5. Glob multiarch as a last resort. */
     for (i = 0; patterns[i] != NULL; i++) {
         if (try_glob(patterns[i]) == CKR_OK) {
-            g_load_status = CKR_OK;
+            g_init_status = CKR_OK;
             goto finished;
         }
     }
@@ -363,16 +479,27 @@ static CK_RV load_target(void) {
     if (debug_enabled()) {
         fprintf(stderr, "dnie-compat: opensc-pkcs11.so not found\n");
     }
-    g_load_status = CKR_GENERAL_ERROR;
+    g_init_status = CKR_GENERAL_ERROR;
 
 finished:
     free(config.module);
     free(config.search);
     free(config.multiarch);
-    return g_load_status;
+    return g_init_status;
 }
 
-CK_RV C_GetFunctionList(void **ppFunctionList) {
+static void initialize_once(void) {
+    g_init_status = load_target_unsafe();
+}
+
+static CK_RV load_target(void) {
+    if (pthread_once(&g_once, initialize_once) != 0) {
+        return CKR_GENERAL_ERROR;
+    }
+    return g_init_status;
+}
+
+DNIE_EXPORT CK_RV C_GetFunctionList(void **ppFunctionList) {
     CK_RV rv;
 
     if (ppFunctionList == NULL) {
@@ -392,10 +519,10 @@ CK_RV C_GetFunctionList(void **ppFunctionList) {
  * implements it, it is forwarded; otherwise the consumer is told it is not
  * supported and can fall back to C_GetFunctionList.
  */
-CK_RV C_GetInterface(const char *pInterfaceName,
-                     void *pVersion,
-                     void **ppInterface,
-                     unsigned long flags) {
+DNIE_EXPORT CK_RV C_GetInterface(const char *pInterfaceName,
+                                 void *pVersion,
+                                 void **ppInterface,
+                                 unsigned long flags) {
     typedef CK_RV (*CK_GET_INTERFACE)(const char *, void *, void **, unsigned long);
     CK_GET_INTERFACE target;
 

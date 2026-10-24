@@ -40,12 +40,27 @@ See [docs/03-shim.md](docs/03-shim.md).
 ```bash
 ./scripts/verify-stack.sh      # installed stack and reader
 ./scripts/verify-card.sh       # card, ATR and certificates (no PIN)
-./tests/test-shim-paths.sh     # 13 module-resolution cases
+./tests/test-shim-paths.sh     # 21 resolution, security and portability cases
 ./tests/run-matrix.sh          # runs the checks and archives the result
 ```
 
 None of these scripts asks for a PIN. Tests that need it are marked T7–T9 in
 the matrix and are never automated: three wrong attempts block the card.
+
+## Portability
+
+Install paths are fully configurable (`PREFIX`, `LIBDIR`, `P11KIT_MODULEDIR`,
+`DOCDIR`, `MODULE_PATH`, `MULTIARCH`). The shim works on FHS distributions and
+on non-FHS systems such as **Guix** and **Nix**; see
+[docs/07-portability.md](docs/07-portability.md) and [guix.scm](guix.scm).
+
+## Security
+
+The shim is small and audited: environment overrides are ignored in
+secure-execution mode (`secure_getenv`), configuration files must be regular and
+safely owned, relative paths are rejected, initialization is thread-safe, only
+two symbols are exported, and the build uses stack protector and full RELRO.
+Findings and fixes are listed in [PLAN.md](PLAN.md#8-security-hardening).
 
 ## Documentation
 
@@ -56,6 +71,7 @@ the matrix and are never automated: three wrong attempts block the card.
 - [docs/04-autofirma.md](docs/04-autofirma.md) — Autofirma on ARM/RISC-V
 - [docs/05-riscv64.md](docs/05-riscv64.md) — RISC-V deployment
 - [docs/06-dnie4.md](docs/06-dnie4.md) — DNIe 4.0 coverage in OpenSC
+- [docs/07-portability.md](docs/07-portability.md) — FHS, Guix and Nix
 - [REPORT.md](REPORT.md) — autonomous session report
 
 ## License

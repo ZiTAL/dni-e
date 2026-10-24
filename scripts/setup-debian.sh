@@ -22,11 +22,7 @@ systemctl is-active pcscd.socket
 
 echo "== 3/4 PKCS#11 shim =="
 make -C "$root/src/pkcs11-shim"
-install -Dm755 "$root/src/pkcs11-shim/libpkcs11-dnie.so" /usr/lib/libpkcs11-dnie.so
-install -Dm644 "$root/src/pkcs11-shim/dnie-compat.module" \
-  /usr/share/p11-kit/modules/dnie-compat.module
-install -Dm644 "$root/src/pkcs11-shim/dnie-compat.conf.example" \
-  /usr/share/doc/dnie-pkcs11-compat/dnie-compat.conf.example
+make -C "$root/src/pkcs11-shim" install PREFIX=/usr
 
 echo "== 4/4 Check =="
 pkcs11-tool --module /usr/lib/libpkcs11-dnie.so -L || true

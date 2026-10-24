@@ -299,7 +299,55 @@ block the card.
 
 ---
 
-## 8. Licenses and legal limits
+## 8. Security hardening
+
+Audit of the shim (the only executable code in this project) and fixes applied:
+
+| # | Finding | Risk | Fix |
+|---|---|---|---|
+| S1 | `DNIE_COMPAT_*` read with `getenv`, so a setuid/setgid process could be redirected to an arbitrary `.so` | High | `secure_getenv(3)`; ignored in secure-execution mode |
+| S2 | Config file could be a FIFO/device, blocking the process | Medium | require a regular file (`S_ISREG`) |
+| S3 | Root could read a group/other-writable config | Medium | root requires `st_uid == 0` and no group/other write |
+| S4 | Relative paths could load a module from the current directory | Medium | non-absolute paths ignored |
+| S5 | Long search paths could truncate into a different path | Low | check `snprintf` result and skip truncation |
+| S6 | Lazy initialization was not thread-safe | Medium | `pthread_once(3)` |
+| S7 | All internal symbols exported | Low | `-fvisibility=hidden`, two exported symbols |
+| S8 | No default hardening flags | Medium | stack protector, full RELRO, `BIND_NOW`, `-z defs` |
+| S9 | User-controlled config in `$HOME` readable by root | Low | secure mode ignores it; ownership/permission checks |
+
+Residual risks documented as out of scope: `LD_PRELOAD`/`LD_LIBRARY_PATH`
+attacks on the host process, a compromised root account, and OpenSC's own
+security. The shim never handles PIN material.
+
+Security behaviour is covered by `tests/test-shim-paths.sh` (FIFO/directory
+config, oversized paths, `BIND_NOW`, `GNU_RELRO`, exported-symbol count,
+8-thread concurrency).
+
+## 9. Portability and non-FHS systems (Guix/Nix)
+
+Every install path is a make variable; nothing is hardcoded to `/usr`:
+
+| Variable | Default |
+|---|---|
+| `PREFIX` | `/usr` |
+| `LIBDIR` | `$(PREFIX)/lib` |
+| `P11KIT_MODULEDIR` | `$(PREFIX)/share/p11-kit/modules` |
+| `DOCDIR` | `$(PREFIX)/share/doc/dnie-pkcs11-compat` |
+| `MODULE_PATH` | *(empty; OpenSC path embedded at build time)* |
+| `MULTIARCH` | `cc -print-multiarch` (`MULTIARCH=` disables it) |
+| `CONFIG_FILE` | `/etc/dnie-compat.conf` |
+| `DESTDIR` | *(empty)* |
+
+The p11-kit `.module` file is generated at install time from
+`dnie-compat.module.in`, so `@LIBDIR@` follows `PREFIX`.
+
+Configuration lookup: `DNIE_COMPAT_CONF` → `/etc/dnie-compat.conf` →
+`$XDG_CONFIG_HOME/dnie-compat.conf` → `$HOME/.config/dnie-compat.conf`.
+`/run/current-system/sw/lib/opensc-pkcs11.so` is a built-in NixOS candidate.
+
+Guix recipe: `guix.scm` and [docs/07-portability.md](docs/07-portability.md).
+
+## 10. Licenses and legal limits
 
 - The project is licensed under **GPL-3.0-or-later** (see `LICENSE`).
 - The official binary is **not** decompiled or rebuilt for redistribution: its
@@ -314,7 +362,7 @@ block the card.
 
 ---
 
-## 9. Repository layout
+## 11. Repository layout
 
 ```
 dni-e/
@@ -329,12 +377,14 @@ dni-e/
 │   ├── 03-shim.md
 │   ├── 04-autofirma.md
 │   ├── 05-riscv64.md
-│   └── 06-dnie4.md
+│   ├── 06-dnie4.md
+│   └── 07-portability.md
+├── guix.scm
 ├── src/
 │   └── pkcs11-shim/
 │       ├── Makefile
 │       ├── dnie_shim.c
-│       ├── dnie-compat.module
+│       ├── dnie-compat.module.in
 │       └── dnie-compat.conf.example
 ├── packaging/
 │   ├── arch/
@@ -345,12 +395,13 @@ dni-e/
 │   └── setup-debian.sh
 └── tests/
     ├── test-shim-paths.sh
+    ├── test-shim-threads.c
     └── run-matrix.sh
 ```
 
 ---
 
-## 10. Ordered backlog
+## 12. Ordered backlog
 
 1. F0: create repo, toolchain and x86-64 snapshot.
 2. F1: component matrix (document).
@@ -365,7 +416,7 @@ dni-e/
 
 ---
 
-## 11. Definition of Done
+## 13. Definition of Done
 
 - [ ] T1–T6 and T10 green on aarch64 and riscv64.
 - [ ] T7–T9 green with valid certificates.
@@ -376,7 +427,7 @@ dni-e/
 
 ---
 
-## 12. Hardware prerequisites
+## 14. Hardware prerequisites
 
 | Element | Status |
 |---|---|
@@ -389,7 +440,7 @@ dni-e/
 
 ---
 
-## 13. Note on the package name
+## 15. Note on the package name
 
 To avoid confusion and legal issues, the package is called
 **`dnie-pkcs11-compat`** (or `libpkcs11-dnie-compat`) and is **not** presented as

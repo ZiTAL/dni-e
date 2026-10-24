@@ -24,19 +24,44 @@ Firefox ──PKCS#11──▶ libpkcs11-dnie.so (shim) ──dlopen──▶ op
   returns `CKR_FUNCTION_NOT_SUPPORTED`.
 - SONAME: `libpkcs11-dnie.so`, identical to the official module.
 - Only absolute paths are accepted.
+- Only two symbols are exported; everything else is hidden.
+- Build hardening: stack protector, full RELRO, `BIND_NOW`, `-z defs`.
+- Initialization is serialized with `pthread_once`, safe for concurrent
+  `C_GetFunctionList` / `C_GetInterface` calls.
 
-## 3. Module path configuration
+## 3. Security hardening
+
+Findings from the audit and the fix applied:
+
+| # | Finding | Risk | Fix |
+|---|---|---|---|
+| S1 | `DNIE_COMPAT_*` variables were read with `getenv(3)`, so a setuid/setgid process could be redirected to an arbitrary `.so` | High | all variables read with `secure_getenv(3)`; ignored in secure-execution mode |
+| S2 | The configuration file could be a FIFO or device, blocking the process or reading an unexpected source | Medium | `stat(2)` + `S_ISREG` required before `fopen` |
+| S3 | When running as root, a group/other-writable or non-root-owned config file allowed privilege escalation | Medium | root requires `st_uid == 0` and no `S_IWGRP`/`S_IWOTH` |
+| S4 | Relative paths in overrides could load a module from the current directory | Medium | non-absolute paths are ignored |
+| S5 | A very long search directory could be truncated into a different path | Low | `snprintf` result checked; truncated candidates are skipped |
+| S6 | Lazy initialization was not thread-safe; concurrent calls could load twice or see partial state | Medium | `pthread_once(3)` |
+| S7 | All internal symbols were exported, widening the interposition surface | Low | `-fvisibility=hidden`; only `C_GetFunctionList` and `C_GetInterface` are exported (asserted by tests) |
+| S8 | No hardening flags in the default build | Medium | `-fstack-protector-strong`, `-Wl,-z,relro,-z,now,-z,defs`; test checks `GNU_RELRO` and `BIND_NOW` |
+| S9 | A user-controlled config file in `$HOME` could be read by a root process | Low | secure mode ignores it; root ownership/permission check applies |
+
+Residual risks (out of scope, documented): `LD_PRELOAD`/`LD_LIBRARY_PATH`
+attacks against the host process, a compromised root account, and OpenSC's own
+security. The shim never sees PIN material: PIN handling stays inside OpenSC.
+
+## 4. Module path configuration
 
 The shim looks for `opensc-pkcs11.so` with this precedence:
 
 | Order | Source | Example | Notes |
 |---|---|---|---|
 | 1 | `DNIE_COMPAT_MODULE` | `/opt/opensc/lib/opensc-pkcs11.so` | Exact path. **Authoritative**: if it fails, nothing else is tried |
-| 2 | `DNIE_COMPAT_SEARCH_PATH` | `/opt/opensc/lib:/usr/local/lib` | Colon-separated directories; looks for `<dir>/opensc-pkcs11.so` and `<dir>/pkcs11/opensc-pkcs11.so` |
-| 3 | `/etc/dnie-compat.conf` | `module=`, `search=`, `multiarch=` | Persistent for desktop launches. Alternate path: `DNIE_COMPAT_CONF` |
+| 2 | `DNIE_COMPAT_SEARCH_PATH` | `/opt/opensc/lib:/usr/local/lib` | Colon-separated directories |
+| 3 | Config file | `$DNIE_COMPAT_CONF`, `/etc/dnie-compat.conf`, `$XDG_CONFIG_HOME/…`, `$HOME/.config/…` | First regular, safe file wins |
 | 4 | `DNIE_COMPAT_MULTIARCH` | `aarch64-linux-gnu` | Runtime override of the compiled tripleta |
-| 5 | Build time | `make MULTIARCH=riscv64-linux-gnu` | `make MULTIARCH=` disables `/usr/lib/<tripleta>/` paths |
-| 6 | Built-in paths + glob | `/usr/lib/opensc-pkcs11.so`, `/usr/lib/*/…` | Last resort |
+| 5 | `MODULE_PATH` (build) | `make MODULE_PATH=/gnu/store/…/opensc-pkcs11.so` | Embedded path; required on Guix/Nix |
+| 6 | `make MULTIARCH=` | `make MULTIARCH=riscv64-linux-gnu` | `MULTIARCH=` disables `/usr/lib/<tripleta>/` |
+| 7 | Built-in paths + glob | `/usr/lib/opensc-pkcs11.so`, `/usr/lib/*/…`, `/run/current-system/sw/lib/…` | Last resort |
 
 Environment variables take precedence over the configuration file.
 
@@ -68,47 +93,25 @@ module=/usr/lib/aarch64-linux-gnu/opensc-pkcs11.so
 Template installed at
 `/usr/share/doc/dnie-pkcs11-compat/dnie-compat.conf.example`.
 
-## 4. Tests
+## 5. Tests
 
-`tests/test-shim-paths.sh` — 13 cases, all without a reader:
+`tests/test-shim-paths.sh` — 21 cases, all without a reader:
 
-| Case | Result |
+| Group | Cases |
 |---|---|
-| Exact path (`DNIE_COMPAT_MODULE`) | ✅ |
-| Directory (`DNIE_COMPAT_SEARCH_PATH`) | ✅ |
-| Several directories, valid one last | ✅ |
-| Relative path ignored | ✅ |
-| Invalid exact path is authoritative (fails) | ✅ |
-| Config file: `module=` | ✅ |
-| Config file: `search=` | ✅ |
-| Invalid config file (fails) | ✅ |
-| `DNIE_COMPAT_DEBUG` diagnostics | ✅ |
-| `DNIE_COMPAT_MULTIARCH` at runtime | ✅ |
-| `make MULTIARCH=tripleta-build` | ✅ |
-| `make MULTIARCH=` (built-in paths) | ✅ |
-| Load through built-in paths | ✅ |
+| Resolution | exact path, directory, several directories, relative ignored, authoritative failure, config `module=`, config `search=`, invalid config, debug output, runtime multiarch, build-time multiarch, empty multiarch |
+| Security | FIFO config ignored, directory config ignored, oversized search entry, `BIND_NOW`, `GNU_RELRO`, only two exported symbols, 8-thread concurrency |
+| Portability | non-FHS install loads through embedded `MODULE_PATH` |
 
 Executed on:
 
 | Architecture | Result |
 |---|---|
-| x86-64 (Manjaro) | ✅ 13/13 |
-| aarch64 (Debian 13) | ✅ 13/13 |
-| riscv64 (Debian 13) | ✅ 13/13 |
+| x86-64 (Manjaro) | ✅ 21/21 |
+| aarch64 (Debian 13) | ✅ 21/21 |
+| riscv64 (Debian 13) | ✅ 21/21 |
 
-Real resolution on the boards:
-
-```text
-# ARM64 host
-dnie-compat: conf=/etc/dnie-compat.conf module=(none) search=(none) multiarch=aarch64-linux-gnu
-dnie-compat: probando /usr/lib/aarch64-linux-gnu/opensc-pkcs11.so
-
-# RISC-V host
-dnie-compat: conf=/etc/dnie-compat.conf module=(none) search=(none) multiarch=riscv64-linux-gnu
-dnie-compat: probando /usr/lib/riscv64-linux-gnu/opensc-pkcs11.so
-```
-
-## 5. Installation
+## 6. Installation
 
 ```bash
 cd src/pkcs11-shim
@@ -119,19 +122,22 @@ sudo make install
 Installs:
 
 - `/usr/lib/libpkcs11-dnie.so`
-- `/usr/share/p11-kit/modules/dnie-compat.module`
+- `/usr/share/p11-kit/modules/dnie-compat.module` (generated from `.in`)
 - `/usr/share/doc/dnie-pkcs11-compat/dnie-compat.conf.example`
+
+All paths are overridable (`PREFIX`, `LIBDIR`, `P11KIT_MODULEDIR`, `DOCDIR`,
+`CONFIG_FILE`, `MODULE_PATH`). See [07-portability.md](07-portability.md).
 
 On Debian, `scripts/setup-debian.sh` does all of this.
 
-## 6. Arch package
+## 7. Arch package
 
 ```bash
 ./packaging/arch/build-local.sh
 sudo pacman -U packaging/arch/dnie-pkcs11-compat-0.1.0-1-*.pkg.tar.zst
 ```
 
-## 7. Known limitations
+## 8. Known limitations
 
 - If the official module is installed, the package conflicts with it
   (`conflicts=('libpkcs11-dnie')`).

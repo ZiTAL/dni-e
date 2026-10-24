@@ -133,6 +133,81 @@ if make -C "$SHIM_DIR" clean >/dev/null 2>&1 && make -C "$SHIM_DIR" MULTIARCH= >
 else
   bad "make MULTIARCH= (build failed)"
 fi
+echo "== Security =="
+mkfifo "$TMP/config.fifo"
+fifo_output=$(timeout 10 env DNIE_COMPAT_CONF="$TMP/config.fifo" "$TOOL" --module "$SHIM" -L 2>&1)
+fifo_rc=$?
+if [ "$fifo_rc" -ne 124 ] && ! printf '%s' "$fifo_output" | grep -q 'Failed to load'; then
+  ok "FIFO configuration ignored (no hang)"
+else
+  bad "FIFO configuration ignored (no hang)"
+fi
+
+directory_output=$(run DNIE_COMPAT_CONF="$TMP")
+if printf '%s' "$directory_output" | grep -q 'Failed to load'; then
+  bad "directory configuration ignored"
+else
+  ok "directory configuration ignored"
+fi
+
+long_path=$(printf '/a%.0s' $(seq 1 2500))
+long_output=$(run DNIE_COMPAT_SEARCH_PATH="$long_path:$TMP/lib")
+if printf '%s' "$long_output" | grep -q 'Failed to load'; then
+  bad "oversized search entry ignored"
+else
+  ok "oversized search entry ignored"
+fi
+
+if readelf -d "$SHIM" 2>/dev/null | grep -q 'BIND_NOW'; then
+  ok "BIND_NOW (full RELRO)"
+else
+  bad "BIND_NOW (full RELRO)"
+fi
+if readelf -l "$SHIM" 2>/dev/null | grep -q 'GNU_RELRO'; then
+  ok "GNU_RELRO segment"
+else
+  bad "GNU_RELRO segment"
+fi
+
+exports=$(nm -D --defined-only "$SHIM" 2>/dev/null | awk '{print $3}' | grep -E '^C_' | sort | tr '\n' ' ')
+export_count=$(printf '%s' "$exports" | wc -w)
+if [ "$export_count" -eq 2 ] && printf '%s' "$exports" | grep -q 'C_GetFunctionList' && \
+   printf '%s' "$exports" | grep -q 'C_GetInterface'; then
+  ok "only C_GetFunctionList and C_GetInterface exported"
+else
+  bad "exported symbols ($exports)"
+fi
+
+cc -O2 -pthread -o "$TMP/threads" tests/test-shim-threads.c -ldl 2>/dev/null
+if DNIE_COMPAT_MODULE="$MODULE" timeout 60 "$TMP/threads" "$SHIM" 2>/dev/null | grep -q '^OK$'; then
+  ok "concurrent C_GetFunctionList (8 threads)"
+else
+  bad "concurrent C_GetFunctionList (8 threads)"
+fi
+
+echo "== Non-FHS install (Guix/Nix style) =="
+prefix="$TMP/prefix"
+if make -C "$SHIM_DIR" clean >/dev/null 2>&1 && \
+   make -C "$SHIM_DIR" PREFIX="$prefix" MODULE_PATH="$MODULE" >/dev/null 2>&1 && \
+   make -C "$SHIM_DIR" install PREFIX="$prefix" >/dev/null 2>&1; then
+  installed="$prefix/lib/libpkcs11-dnie.so"
+  module_file="$prefix/share/p11-kit/modules/dnie-compat.module"
+  if [ -f "$installed" ] && grep -qx "module: $installed" "$module_file"; then
+    nonfhs_output=$(env -u DNIE_COMPAT_MODULE -u DNIE_COMPAT_SEARCH_PATH \
+                        -u DNIE_COMPAT_MULTIARCH -u DNIE_COMPAT_CONF \
+                        "$TOOL" --module "$installed" -L 2>&1)
+    if printf '%s' "$nonfhs_output" | grep -q 'Failed to load'; then
+      bad "non-FHS install loads through embedded MODULE_PATH"
+    else
+      ok "non-FHS install loads through embedded MODULE_PATH"
+    fi
+  else
+    bad "non-FHS install layout"
+  fi
+else
+  bad "non-FHS install build"
+fi
+
 make -C "$SHIM_DIR" clean >/dev/null 2>&1 && make -C "$SHIM_DIR" >/dev/null 2>&1
 
 echo

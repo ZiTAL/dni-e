@@ -4,15 +4,30 @@ CC      ?= cc
 #   make MULTIARCH=aarch64-linux-gnu
 #   make MULTIARCH=            (disables /usr/lib/<tripleta>/ paths)
 MULTIARCH := $(shell $(CC) -print-multiarch 2>/dev/null)
-CONFIG_FILE ?= /etc/dnie-compat.conf
+
+# Paths are fully overridable for non-FHS systems (Guix, Nix):
+#   make PREFIX=/gnu/store/... LIBDIR=/gnu/store/.../lib \
+#        P11KIT_MODULEDIR=/gnu/store/.../share/p11-kit/modules \
+#        MODULE_PATH=/gnu/store/.../lib/opensc-pkcs11.so
+CONFIG_FILE     ?= /etc/dnie-compat.conf
+MODULE_PATH     ?=
+PREFIX          ?= /usr
+LIBDIR          ?= $(PREFIX)/lib
+P11KIT_MODULEDIR ?= $(PREFIX)/share/p11-kit/modules
+DOCDIR          ?= $(PREFIX)/share/doc/dnie-pkcs11-compat
+
 CFLAGS  ?= -O2
-CFLAGS  += -fPIC -Wall -Wextra
+CFLAGS  += -fPIC -Wall -Wextra -fstack-protector-strong -fvisibility=hidden
 CPPFLAGS += -DDNIE_COMPAT_MULTIARCH=\"$(MULTIARCH)\"
 CPPFLAGS += -DDNIE_COMPAT_CONFIG_FILE=\"$(CONFIG_FILE)\"
-SOFLAGS := -shared -Wl,-soname,libpkcs11-dnie.so
+ifneq ($(strip $(MODULE_PATH)),)
+CPPFLAGS += -DDNIE_COMPAT_DEFAULT_MODULE=\"$(MODULE_PATH)\"
+endif
+
+SOFLAGS := -shared -Wl,-soname,libpkcs11-dnie.so \
+           -Wl,-z,relro -Wl,-z,now -Wl,-z,defs
+LDLIBS  := -ldl -pthread
 LDFLAGS ?=
-PREFIX  ?= /usr
-LIBDIR  ?= $(PREFIX)/lib
 DESTDIR ?=
 
 TARGET  := libpkcs11-dnie.so
@@ -22,7 +37,7 @@ TARGET  := libpkcs11-dnie.so
 all: $(TARGET)
 
 $(TARGET): dnie_shim.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) $(SOFLAGS) $(LDFLAGS) -o $@ $< -ldl
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(SOFLAGS) $(LDFLAGS) -o $@ $< $(LDLIBS)
 
 test: $(TARGET)
 	pkcs11-tool --module ./$(TARGET) -L
@@ -30,13 +45,16 @@ test: $(TARGET)
 
 install: $(TARGET)
 	install -Dm755 $(TARGET) $(DESTDIR)$(LIBDIR)/$(TARGET)
-	install -Dm644 dnie-compat.module $(DESTDIR)$(PREFIX)/share/p11-kit/modules/dnie-compat.module
-	install -Dm644 dnie-compat.conf.example $(DESTDIR)$(PREFIX)/share/doc/dnie-pkcs11-compat/dnie-compat.conf.example
+	install -d $(DESTDIR)$(P11KIT_MODULEDIR)
+	sed 's|@LIBDIR@|$(LIBDIR)|g' dnie-compat.module.in \
+	  > $(DESTDIR)$(P11KIT_MODULEDIR)/dnie-compat.module
+	chmod 644 $(DESTDIR)$(P11KIT_MODULEDIR)/dnie-compat.module
+	install -Dm644 dnie-compat.conf.example $(DESTDIR)$(DOCDIR)/dnie-compat.conf.example
 
 uninstall:
 	rm -f $(DESTDIR)$(LIBDIR)/$(TARGET)
-	rm -f $(DESTDIR)$(PREFIX)/share/p11-kit/modules/dnie-compat.module
-	rm -f $(DESTDIR)$(PREFIX)/share/doc/dnie-pkcs11-compat/dnie-compat.conf.example
+	rm -f $(DESTDIR)$(P11KIT_MODULEDIR)/dnie-compat.module
+	rm -f $(DESTDIR)$(DOCDIR)/dnie-compat.conf.example
 
 clean:
 	rm -f $(TARGET)

@@ -37,11 +37,28 @@ laboratory stores (PKCS#12 and SoftHSM).
 | PAdES signing of a PDF | ✅ 55,364 B | ✅ 55,364 B |
 | PKCS#11 store signing | ✅ 5,114 B | ✅ 5,115 B |
 | `SignatureValue` present | ✅ | ✅ |
-| 13 configurable-path tests | ✅ | ✅ |
+| 21 resolution/security/portability tests | ✅ | ✅ |
 
 The PKCS#11 test is the important one: it is exactly the path the DNIe will use
 (Autofirma → PKCS#11 module → card). It was done with SoftHSM because there is
 no reader yet; replacing SoftHSM with `libpkcs11-dnie.so` keeps the same flow.
+
+---
+
+## 3. Security and portability
+
+The shim was audited and hardened (see `PLAN.md` §8): `secure_getenv` for all
+environment overrides, regular-file and ownership checks for the configuration,
+rejection of relative paths, truncation checks, `pthread_once`, hidden symbols,
+stack protector and full RELRO. The suite now covers 21 cases, including
+FIFO/directory configuration, oversized paths, exported-symbol count and
+8-thread concurrency.
+
+Install paths are path-agnostic (`PREFIX`, `LIBDIR`, `P11KIT_MODULEDIR`,
+`DOCDIR`, `MODULE_PATH`, `MULTIARCH`), and the p11-kit module file is generated
+at install time. This makes the shim usable on FHS distributions and on
+non-FHS systems such as Guix and Nix; see `docs/07-portability.md` and
+`guix.scm`.
 
 ---
 

@@ -17,7 +17,7 @@ trap 'rm -rf "$work"' EXIT
 mkdir -p "$work/$pkgname-$pkgver"
 cp "$root/src/pkcs11-shim/dnie_shim.c" \
    "$root/src/pkcs11-shim/Makefile" \
-   "$root/src/pkcs11-shim/dnie-compat.module" \
+   "$root/src/pkcs11-shim/dnie-compat.module.in" \
    "$root/src/pkcs11-shim/dnie-compat.conf.example" \
    "$root/src/pkcs11-shim/README.md" \
    "$root/LICENSE" \
