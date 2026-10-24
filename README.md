@@ -118,6 +118,7 @@ Findings and fixes are listed in [PLAN.md](PLAN.md#8-security-hardening).
 - [docs/07-portability.md](docs/07-portability.md) — FHS, Guix and Nix
 - [docs/08-universal-install.md](docs/08-universal-install.md) — installer for any Linux and architecture
 - [docs/09-multiarch-validation.md](docs/09-multiarch-validation.md) — cross-build, musl and QEMU validation
+- [docs/10-headless-browser.md](docs/10-headless-browser.md) — headless browsers and the DNIe PIN
 - [REPORT.md](REPORT.md) — autonomous session report
 
 ## License

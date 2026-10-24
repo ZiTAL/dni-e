@@ -406,7 +406,8 @@ dni-e/
 │   ├── 06-dnie4.md
 │   ├── 07-portability.md
 │   ├── 08-universal-install.md
-│   └── 09-multiarch-validation.md
+│   ├── 09-multiarch-validation.md
+│   └── 10-headless-browser.md
 ├── guix.scm
 ├── install.sh
 ├── src/
