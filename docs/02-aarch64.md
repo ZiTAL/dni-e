@@ -79,6 +79,32 @@ Certificates: CertAutenticacion, CertFirmaDigital, CertCAIntermediaDGP
 | T5 — `pkcs11-tool -L/-O` through the shim | ✅ token `DNI electrónico`, 3 certs and public keys |
 | T6 — NSS (Firefox layer) lists the certificates | ✅ 3 certs through the shim (`tests/test-nss.sh`) |
 
+### USB re-enumeration (`LIBUSB_ERROR_IO`)
+
+If `lsusb` shows the reader but `pcscd` logs:
+
+```
+ReadUSB() read failed: LIBUSB_ERROR_IO
+Open Port ... Failed
+Alcor Micro AU9540 init failed
+```
+
+the USB device is in a bad state (flaky port, cable or power). Reset the port:
+
+```bash
+ls /sys/bus/usb/devices            # find the reader, for example 6-1
+echo -n 6-1 | sudo tee /sys/bus/usb/drivers/usb/unbind
+sleep 2
+echo -n 6-1 | sudo tee /sys/bus/usb/drivers/usb/bind
+sudo systemctl restart pcscd.socket
+systemctl is-active pcscd.socket
+pcsc_scan
+```
+
+If it keeps happening, use a different USB port (prefer USB 3.0), avoid hubs
+and try a shorter cable. The AU9540 is a full-speed device and works on USB
+3.0 ports.
+
 ## 5. Autofirma
 
 The AUR package (contents `any`) was installed with the launcher adapted to

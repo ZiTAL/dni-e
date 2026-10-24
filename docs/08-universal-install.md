@@ -176,6 +176,7 @@ it installed and the polkit rule (only if it matches the shipped one). It does
 |---|---|---|
 | `lsusb` shows the reader but PC/SC does not | polkit denies `access_pcsc` | Install `packaging/polkit/50-pcscd.rules`; user must be in `plugdev` |
 | `opensc-tool -n` says no readers | `pcscd` not running | `systemctl enable --now pcscd.socket` (or OpenRC equivalent) |
+| `LIBUSB_ERROR_IO` / reader init failed | USB device in a bad state | Reset the port: unbind/bind the device and restart `pcscd` (see docs/02) |
 | `dpkg`/`rpm` conflict with the FNMT package | Both provide `libpkcs11-fnmtdnie.so` | Remove the official package or use `--prefix` |
 | Browser does not list certificates | Module not loaded or browser not restarted | `./scripts/setup-browser.sh <module>` and restart |
 | Autofirma says no certificates | DNIe certificates expired | Renew them in person |
