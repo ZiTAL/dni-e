@@ -1,0 +1,18 @@
+#!/usr/bin/make -f
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+%:
+	dh $@
+
+override_dh_auto_configure:
+	# no configure step
+
+override_dh_auto_build:
+	$(MAKE) -C src/pkcs11-shim
+
+override_dh_auto_test:
+	# the test suite needs a card reader
+
+override_dh_auto_install:
+	$(MAKE) -C src/pkcs11-shim install \
+		DESTDIR=$(CURDIR)/debian/dnie-pkcs11-compat PREFIX=/usr

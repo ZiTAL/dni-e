@@ -33,6 +33,26 @@ cd dni-e
 sudo ./install.sh --system
 ```
 
+### Debian/Ubuntu package
+
+On Debian and derivatives, the release also provides a `.deb`:
+
+```bash
+sudo apt-get install -y opensc p11-kit pcscd
+sudo dpkg -i dnie-pkcs11-compat_0.2.0_arm64.deb
+sudo apt-get -f install
+```
+
+### Verify signatures
+
+```bash
+sha256sum -c SHA256SUMS --ignore-missing
+gpg --import dnie-release-key.asc
+gpg --verify SHA256SUMS.asc SHA256SUMS
+```
+
+Fingerprint: `90E9197F3D36A666A8AF35FB99B38DA239882575`.
+
 Then:
 
 ```bash

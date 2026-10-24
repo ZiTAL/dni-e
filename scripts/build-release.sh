@@ -9,7 +9,8 @@ set -euo pipefail
 ROOT_DIR=$(cd "$(dirname "$0")/.." && pwd)
 SHIM_DIR="$ROOT_DIR/src/pkcs11-shim"
 VERSION="${VERSION:-0.1.0}"
-ARCH=$(uname -m)
+ARCH="${ARCH:-$(uname -m)}"
+CC="${CC:-cc}"
 
 case "$ARCH" in
   x86_64|i386|i686|aarch64|armv7l|riscv64|ppc64le|s390x) ;;
@@ -21,9 +22,9 @@ out="$ROOT_DIR/dist/${name}.tar.gz"
 staging=$(mktemp -d)
 trap 'rm -rf "$staging"' EXIT
 
-echo "==> building the shim for $ARCH"
+echo "==> building the shim for $ARCH with $CC"
 make -C "$SHIM_DIR" clean >/dev/null
-make -C "$SHIM_DIR"
+make -C "$SHIM_DIR" CC="$CC"
 
 echo "==> staging $name"
 mkdir -p "$staging/$name/prebuilt"

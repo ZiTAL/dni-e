@@ -1,0 +1,23 @@
+Source: dnie-pkcs11-compat
+Section: misc
+Priority: optional
+Maintainer: ZiTAL <2283548+ZiTAL@users.noreply.github.com>
+Build-Depends: debhelper-compat (= 13), build-essential
+Standards-Version: 4.7.0
+Rules-Requires-Root: no
+Homepage: https://github.com/ZiTAL/dni-e
+
+Package: dnie-pkcs11-compat
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, opensc, p11-kit, pcscd
+Recommends: libccid
+Provides: libpkcs11-dnie, libpkcs11-fnmtdnie
+Conflicts: libpkcs11-dnie, libpkcs11-fnmtdnie
+Replaces: libpkcs11-dnie, libpkcs11-fnmtdnie
+Description: PKCS#11 compatibility module for the Spanish DNIe
+ OpenSC-based module that exposes the libpkcs11-dnie.so name and ABI
+ expected by Spanish DNIe applications and guides, on any architecture
+ supported by OpenSC, including aarch64 and riscv64.
+ .
+ It is an independent implementation based on OpenSC, not the official
+ DGP/FNMT module.

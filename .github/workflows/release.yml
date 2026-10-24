@@ -1,0 +1,136 @@
+name: release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release tag (for example v0.2.0)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  tarballs:
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86_64
+            cc: cc
+            pkg: ''
+          - arch: aarch64
+            cc: aarch64-linux-gnu-gcc
+            pkg: gcc-aarch64-linux-gnu
+          - arch: riscv64
+            cc: riscv64-linux-gnu-gcc
+            pkg: gcc-riscv64-linux-gnu
+          - arch: armv7l
+            cc: arm-linux-gnueabihf-gcc
+            pkg: gcc-arm-linux-gnueabihf
+          - arch: ppc64le
+            cc: powerpc64le-linux-gnu-gcc
+            pkg: gcc-powerpc64le-linux-gnu
+          - arch: s390x
+            cc: s390x-linux-gnu-gcc
+            pkg: gcc-s390x-linux-gnu
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends build-essential file ${{ matrix.pkg }}
+
+      - name: Build release tarball
+        env:
+          VERSION: ${{ github.event.inputs.version || github.ref_name }}
+          ARCH: ${{ matrix.arch }}
+          CC: ${{ matrix.cc }}
+        run: |
+          export VERSION="${VERSION#v}"
+          ./scripts/build-release.sh
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tarball-${{ matrix.arch }}
+          path: dist/*.tar.gz
+          if-no-files-found: error
+
+  debs:
+    runs-on: ${{ matrix.runner }}
+    continue-on-error: ${{ matrix.optional }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            optional: false
+          - runner: ubuntu-24.04-arm
+            optional: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install packaging tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends build-essential debhelper dpkg-dev
+
+      - name: Build .deb
+        run: ./packaging/debian/build.sh
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: deb-${{ matrix.runner }}
+          path: dist/*.deb
+          if-no-files-found: error
+
+  publish:
+    needs: [tarballs, debs]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Checksums
+        run: |
+          cd dist
+          find . -maxdepth 1 \( -name '*.tar.gz' -o -name '*.deb' \) -print0 \
+            | sort -z | xargs -0 sha256sum > SHA256SUMS
+          cat SHA256SUMS
+
+      - name: Sign checksums
+        if: env.GPG_PRIVATE_KEY != ''
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+          GPG_KEY_ID: ${{ secrets.GPG_KEY_ID }}
+        run: |
+          echo "$GPG_PRIVATE_KEY" | gpg --batch --import
+          ./scripts/sign-release.sh dist/SHA256SUMS
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="${{ github.event.inputs.version || github.ref_name }}"
+          if gh release view "$VERSION" >/dev/null 2>&1; then
+            echo "release $VERSION already exists; skipping"
+            exit 0
+          fi
+          NOTES="docs/release-notes/${VERSION}.md"
+          if [ -f "$NOTES" ]; then
+            gh release create "$VERSION" dist/* INSTALL.md \
+              --title "$VERSION" --notes-file "$NOTES"
+          else
+            gh release create "$VERSION" dist/* INSTALL.md \
+              --title "$VERSION" --generate-notes
+          fi

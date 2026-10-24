@@ -1,8 +1,8 @@
-# DNIe on Linux — installation
+# DNIe on Linux — installation (v0.2.0)
 
-This document covers the release tarballs (`aarch64`, `riscv64`) and a source
-install. The goal is a working DNIe stack: reader, PKCS#11 module, browsers and
-optional document signing with Autofirma.
+This document covers the prebuilt packages (aarch64, riscv64, x86-64) and a
+source install. The goal is a working DNIe stack: reader, PKCS#11 module,
+browsers and optional document signing with Autofirma.
 
 ## Requirements
 
@@ -11,29 +11,54 @@ optional document signing with Autofirma.
 - Root or `sudo` for a system-wide install.
 - For Autofirma: Java 17 or newer.
 
-## Option A — release tarball (no compiler needed)
+## Assets
 
-Download the asset matching the machine (`uname -m`):
+| Architecture | Tarball | Debian package |
+|---|---|---|
+| ARM64 | `dnie-pkcs11-compat-0.2.0-aarch64.tar.gz` | `dnie-pkcs11-compat_0.2.0_arm64.deb` |
+| RISC-V 64 | `dnie-pkcs11-compat-0.2.0-riscv64.tar.gz` | `dnie-pkcs11-compat_0.2.0_riscv64.deb` |
+| x86-64 | `dnie-pkcs11-compat-0.2.0-x86_64.tar.gz` | — |
 
-| Architecture | Asset |
-|---|---|
-| ARM64 | `dnie-pkcs11-compat-0.1.0-aarch64.tar.gz` |
-| RISC-V 64 | `dnie-pkcs11-compat-0.1.0-riscv64.tar.gz` |
+Also attached: `SHA256SUMS`, `SHA256SUMS.asc` and `dnie-release-key.asc`.
 
-Verify and install:
+## Verify the download
 
 ```bash
 sha256sum -c SHA256SUMS --ignore-missing
-tar xzf dnie-pkcs11-compat-0.1.0-aarch64.tar.gz
-cd dnie-pkcs11-compat-0.1.0-aarch64
+
+# Optional: verify the checksums signature
+gpg --import dnie-release-key.asc
+gpg --verify SHA256SUMS.asc SHA256SUMS
+```
+
+Key fingerprint: `90E9197F3D36A666A8AF35FB99B38DA239882575`.
+
+## Option A — Debian/Ubuntu package
+
+```bash
+sudo apt-get update
+sudo apt-get install -y opensc p11-kit pcscd
+sudo dpkg -i dnie-pkcs11-compat_0.2.0_arm64.deb
+sudo apt-get -f install
+```
+
+Use `riscv64` on RISC-V. The package installs
+`/usr/lib/libpkcs11-dnie.so`, the `libpkcs11-fnmtdnie.so` alias and the p11-kit
+registration. It does not install Autofirma.
+
+## Option B — release tarball (no compiler)
+
+```bash
+tar xzf dnie-pkcs11-compat-0.2.0-aarch64.tar.gz
+cd dnie-pkcs11-compat-0.2.0-aarch64
 sudo ./install.sh --binary --system
 ```
 
-The installer uses the prebuilt `prebuilt/libpkcs11-dnie.so`, installs
-OpenSC/pcsc-lite/ccid if needed, registers the module with p11-kit, configures
-polkit/plugdev and optionally the browsers.
+The installer uses `prebuilt/libpkcs11-dnie.so`, installs OpenSC/pcsc-lite/ccid
+if needed, registers p11-kit, configures polkit/plugdev and optionally the
+browsers.
 
-## Option B — from source
+## Option C — from source
 
 ```bash
 git clone https://github.com/ZiTAL/dni-e.git
@@ -41,16 +66,11 @@ cd dni-e
 sudo ./install.sh --system
 ```
 
-This compiles the shim for the current architecture.
-
 ## User prefix (no root)
 
 ```bash
 ./install.sh --prefix "$HOME/.local"
 ```
-
-The shim and the p11-kit registration go under `$HOME/.local`. System steps
-(service, polkit) are skipped with a warning.
 
 ## Autofirma (document signing)
 
@@ -69,7 +89,7 @@ With `--system` (or a user prefix), the installer adds the module to every
 Firefox profile and to Chrome/Chromium (`~/.pki/nssdb`), keeping backups.
 Restart the browsers afterwards.
 
-To do it manually later:
+Manual refresh:
 
 ```bash
 ./scripts/setup-browser.sh /usr/lib/libpkcs11-dnie.so
@@ -94,7 +114,7 @@ OpenSC recognizes: dnie
 ```
 
 If the card says `Unresponsive card`, turn the DNIe around: the chip must face
-the reader contacts.
+the reader contact.
 
 ## Troubleshooting
 
@@ -102,7 +122,7 @@ the reader contacts.
 |---|---|
 | `lsusb` shows the reader but PC/SC does not | polkit: install `packaging/polkit/50-pcscd.rules`; user must be in `plugdev` |
 | No readers | `systemctl enable --now pcscd.socket` (or OpenRC equivalent) |
-| Browser shows no certificates | restart the browser; check `tests/test-nss.sh` |
+| Browser shows no certificates | restart the browser; run `tests/test-nss.sh` |
 | Autofirma shows no certificates | DNIe certificates expired; renew them in person |
 | Package conflict with the FNMT module | both provide `libpkcs11-fnmtdnie.so`; remove one |
 
@@ -110,12 +130,19 @@ Full guide: `docs/08-universal-install.md`.
 
 ## Uninstall
 
+Debian package:
+
+```bash
+sudo dpkg -r dnie-pkcs11-compat
+```
+
+Tarball/source:
+
 ```bash
 sudo ./install.sh --system --uninstall
 ```
 
-Removes the shim, alias, p11-kit registration, Autofirma files and the polkit
-rule installed by this project. Distribution packages are kept.
+Distribution packages (OpenSC, pcscd) are kept.
 
 ## License
 

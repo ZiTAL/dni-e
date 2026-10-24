@@ -276,6 +276,10 @@ documented coexistence with the official module.
 - Browser setup (Firefox profiles and Chrome NSS database) with backups.
 - Portable Autofirma launcher that accepts any Java >= 17.
 - polkit rule and `plugdev` membership automation.
+- Debian package (`packaging/debian/`) with `Provides`/`Conflicts`.
+- Tag-driven release workflow: cross-built tarballs for x86-64, aarch64,
+  riscv64, armv7, ppc64le and s390x, native `.deb` on x86-64 and ARM64.
+- Detached GPG signature for `SHA256SUMS` and public key export.
 
 **Deliverable:** `install.sh`, `scripts/setup-browser.sh`,
 `packaging/autofirma/`, `docs/08-universal-install.md`.

@@ -1,0 +1,8 @@
+dnie-pkcs11-compat (0.2.0) unstable; urgency=medium
+
+  * Initial Debian package.
+  * OpenSC-based PKCS#11 compatibility module with the libpkcs11-dnie.so
+    and libpkcs11-fnmtdnie.so names.
+  * p11-kit registration.
+
+ -- ZiTAL <2283548+ZiTAL@users.noreply.github.com>  Sat, 24 Oct 2026 23:50:00 +0000

@@ -283,8 +283,12 @@ install_autofirma() {
   [ "$DO_AUTOFIRMA" -eq 1 ] || return 0
   [ -f "$AUTOFIRMA_JAR" ] || die "Autofirma jar not found: $AUTOFIRMA_JAR"
 
+  local dest="$PREFIX/share/java/autofirma/autofirma.jar"
+
   say "installing Autofirma"
-  run_prefix install -Dm644 "$AUTOFIRMA_JAR" "$PREFIX/share/java/autofirma/autofirma.jar"
+  if [ "$(readlink -f "$AUTOFIRMA_JAR")" != "$(readlink -f "$dest" 2>/dev/null || printf '%s' "$dest")" ]; then
+    run_prefix install -Dm644 "$AUTOFIRMA_JAR" "$dest"
+  fi
   run_prefix install -Dm755 "$ROOT_DIR/packaging/autofirma/autofirma-launcher" \
     "$PREFIX/bin/autofirma-dnie"
   run_prefix install -Dm644 "$ROOT_DIR/packaging/autofirma/autofirma-dnie.desktop" \
