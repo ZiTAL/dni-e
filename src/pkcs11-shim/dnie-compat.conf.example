@@ -1,0 +1,19 @@
+# Configuration for libpkcs11-dnie (OpenSC-based shim)
+#
+# Copy to /etc/dnie-compat.conf for persistent configuration.
+# Environment variables take precedence over this file:
+#   DNIE_COMPAT_MODULE        exact module path (authoritative)
+#   DNIE_COMPAT_SEARCH_PATH   colon-separated directories
+#   DNIE_COMPAT_MULTIARCH     tripleta: aarch64-linux-gnu, riscv64-linux-gnu...
+#   DNIE_COMPAT_CONF          alternate path to this file
+#
+# Examples (uncomment one):
+
+# Exact path to the OpenSC module
+# module=/usr/lib/aarch64-linux-gnu/opensc-pkcs11.so
+
+# Directories to search for opensc-pkcs11.so
+# search=/usr/local/lib:/opt/opensc/lib
+
+# Tripleta used for /usr/lib/<tripleta>/opensc-pkcs11.so
+# multiarch=aarch64-linux-gnu

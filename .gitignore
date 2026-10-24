@@ -1,0 +1,17 @@
+# Verification artifacts
+artifacts/
+
+# Shim build
+src/pkcs11-shim/*.so
+src/pkcs11-shim/*.o
+
+# makepkg build
+packaging/arch/pkg/
+packaging/arch/src/
+packaging/arch/*.pkg.tar.zst
+packaging/arch/*.tar.gz
+
+# Reference material (official binary, not redistributable)
+reference/
+
+__pycache__/

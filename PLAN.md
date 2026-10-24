@@ -1,0 +1,398 @@
+# PLAN — DNIe on aarch64 and riscv64
+
+**Status:** v1 draft · 2026-10-24
+**Scope:** Linux (Arch/Manjaro, Debian/Ubuntu)
+**Goal:** make the DNIe libraries and applications work on ARM64 and RISC-V 64 machines.
+
+---
+
+## 0. Executive summary
+
+`libpkcs11-dnie` (commercial name **MultiCard PKCS11**) is a **closed-source**
+x86-64 binary with no source code, under a "custom" license that allows
+redistributing the original binary but not modifying it. **There is no build for
+aarch64 or riscv64, and it cannot be rebuilt.**
+
+Therefore "porting the libraries" does not mean translating the binary; it means
+**delivering a functionally equivalent native stack**:
+
+1. **OpenSC** (LGPL) as the PKCS#11 module, with its `card-dnie.c` driver.
+2. A **compatibility shim** named `libpkcs11-dnie.so` that forwards the PKCS#11
+   ABI to OpenSC, so applications and guides that expect the official path work
+   unchanged.
+3. **Autofirma + jmulticard** (Java, GPL/EUPL), which are architecture-independent.
+4. Real packaging for **ALARM/Arch RISC-V** and **Debian riscv64**, with tests on
+   hardware.
+
+The serious engineering work is not packaging: it is **covering the DNIe 4.0
+operations** that OpenSC may not implement, using `jmulticard` (LGPL/EUPL) as a
+reference and, where needed, verifying the official module's behaviour with
+reverse engineering (REA + Ghidra).
+
+**Expected outcome:** a user with a reader and a DNIe can install a package and
+perform web authentication and electronic signing on aarch64 and riscv64,
+without the official binary.
+
+---
+
+## 1. Objectives
+
+1. Detect the reader and the card on aarch64 and riscv64 (`pcscd` + `ccid`).
+2. Expose the DNIe certificates and keys through PKCS#11.
+3. Web authentication (Firefox) on both architectures.
+4. Document signing with Autofirma on both architectures.
+5. Reproducible installation through native packages.
+6. Document limits, differences and troubleshooting.
+
+## 2. Non-goals
+
+- Rebuilding or "translating" the official binary (`libpkcs11-dnie.so`).
+  Technically impossible without source.
+- Windows and macOS.
+- PIN bypass, private key extraction or any attack on the card.
+- Replacing the FNMT/DGP as issuer: this is an independent implementation, not
+  an official one.
+
+---
+
+## 3. Technical reality (why the plan looks like this)
+
+| Component | Source | x86-64 | aarch64 | riscv64 | Strategy |
+|---|---|---|---|---|---|
+| `libpkcs11-dnie.so` (official) | ❌ closed | ✅ binary | ❌ | ❌ | **Not ported**. Replaced by OpenSC + shim |
+| `libpkcs11-dnie-{cryptopp,asn1,asn1skeletons}` | ❌ closed | ✅ | ❌ | ❌ | Internal to the official module; not needed |
+| OpenSC (`opensc-pkcs11.so`) | ✅ LGPL | ✅ | ✅ buildable | ✅ buildable | **Base of the port** |
+| `card-dnie.c` (DNIe driver) | ✅ LGPL | ✅ 3.0 | ✅ | ✅ | Reference; possible 4.0 extension |
+| `jmulticard` | ✅ LGPL/EUPL | ✅ Java | ✅ Java | ✅ Java | Protocol reference (PACE, CWA 14890, APDUs) |
+| Autofirma | ✅ GPL/EUPL | ✅ | ✅ Java | ✅ Java | Package and test |
+| `pcsclite`, `ccid` | ✅ | ✅ | ✅ | ✅ | Distribution packages |
+| Firefox | ✅ | ✅ | ✅ | ⚠️ distribution-dependent | Reference browser |
+| Chromium | ✅ | ✅ | ✅ | ⚠️ very limited | Not blocking |
+| pinentry / libassuan | ✅ | ✅ | ✅ | ✅ | Only used by the official module; not applicable |
+
+**Conclusion:** 90% of the stack is already portable. The remaining 10% is
+(a) name/path compatibility, (b) real DNIe 4.0 coverage, and (c) packaging and
+validation on hardware.
+
+### 3.1 Why emulating the binary does not work
+
+An x86-64 `.so` cannot be loaded inside an aarch64/riscv64 Firefox: the ELF has
+a different machine type. Box64/QEMU can run a complete x86-64 process, but they
+cannot mix libraries across architectures. Emulating an entire x86 browser would
+be fragile, slow and insecure. Discarded as a solution; kept only as a
+point-in-time diagnostic.
+
+---
+
+## 4. Target architecture
+
+```
+┌──────────────────────────────────────────────────────────┐
+│ Applications                                             │
+│  Firefox / Chromium        Autofirma (Java)              │
+│        │                        │                        │
+│        │ PKCS#11                │ JCA/JCE + JMulticard    │
+│        ▼                        ▼                        │
+│  libpkcs11-dnie.so  ──shim──▶  opensc-pkcs11.so          │
+│  (compatibility)               (LGPL, multi-arch)        │
+│                                   │                      │
+├───────────────────────────────────┼──────────────────────┤
+│ PC/SC: pcsclite + ccid + pcscd    ▼                      │
+│                              USB reader                  │
+└──────────────────────────────────────────────────────────┘
+```
+
+Two paths, one piece of hardware:
+
+- **PKCS#11** (browsers and native apps): shim → OpenSC.
+- **Java** (Autofirma): jmulticard talks to PC/SC directly.
+
+---
+
+## 5. Phases
+
+Each phase has a deliverable and an acceptance criterion. No phase is closed
+until its criterion is met.
+
+### F0 — Laboratory setup
+
+**Tasks**
+- Repository structure in `~/dni-e`.
+- Toolchain: `base-devel`, `git`, `cmake`, `ninja`, `pkg-config`, `jdk17-openjdk`,
+  `maven`, `pcsc-lite` headers, `openssl`.
+- Pin reference versions (OpenSC, Autofirma, pcsc-lite, ccid).
+- Document available hardware: aarch64 board, riscv64 board, reader(s), DNIe.
+- Snapshot of the current working x86-64 state (OpenSC + Firefox).
+
+**Deliverable:** `docs/00-environment.md` with versions, hardware and baseline.
+**Acceptance:** reproduce the current x86-64 flow (reader + card + certificates listed).
+
+---
+
+### F1 — Inventory and compatibility matrix
+
+**Tasks**
+- Enumerate every required artifact and its status per architecture.
+- Identify real native dependencies (not the official module's).
+- Check repository availability: ALARM (aarch64), Arch RISC-V, Debian riscv64.
+- Decide what is packaged and what comes from the distribution.
+
+**Deliverable:** `docs/01-matrix.md` with component × architecture × origin.
+**Acceptance:** no component left without a strategy.
+
+---
+
+### F2 — Base stack on aarch64
+
+**Tasks**
+- Install/build `pcsclite`, `ccid`, `pcsc-tools`, `opensc`.
+- Verify `pcscd.socket` active and `pcsc_scan` detecting the reader.
+- Verify `opensc-tool -n` → `dnie` and `pkcs15-tool --list-certificates`.
+- Load the module in Firefox and validate authentication.
+- Test with DNIe 3.0 and 4.0 if both are available.
+
+**Deliverable:** `docs/02-aarch64.md` + verification scripts.
+**Acceptance:** full web authentication on aarch64 with the correct PIN
+(requires valid certificates).
+
+**Blocking note:** current certificates expired on 2024-10-18. Without renewal,
+authentication and signing cannot be validated; detection, ATR, certificate
+listing and PKCS#15 structure can.
+
+---
+
+### F3 — PKCS#11 compatibility (shim)
+
+**Tasks**
+- Implement `src/pkcs11-shim/` in C:
+  - exports `C_GetFunctionList` and delegates to OpenSC's list;
+  - `C_GetInfo` reports a neutral name ("DNIe PKCS#11 (OpenSC)") without
+    impersonating the official module;
+  - supports `dlopen` by path and by `soname`.
+- Install as `/usr/lib/libpkcs11-dnie.so` (and `lib64` where applicable).
+- Register in `p11-kit` (`/usr/share/p11-kit/modules/`).
+- Test with: `pkcs11-tool`, Firefox, Chromium, and an app that hardcodes the
+  official path.
+
+**Deliverable:** `dnie-pkcs11-compat` package.
+**Acceptance:** an official DNIe installation guide (pointing to
+`libpkcs11-dnie.so`) works without editing paths.
+
+**Open decision:** direct symlink vs shim. Start with a symlink (minimum effort)
+and justify the shim only if there are behaviour or identity differences.
+
+---
+
+### F4 — Java applications (Autofirma)
+
+**Tasks**
+- Build Autofirma from source (`ctt-gob-es/clienteafirma`) with JDK 17.
+- Verify the launcher does not assume x86 paths (`/usr/lib/jvm/java-17-openjdk`).
+- Test PDF signing with the DNIe.
+- Validate `afirma://` in Firefox.
+- Review the existing AUR packaging and adapt it to multi-arch.
+
+**Deliverable:** working `autofirma` package on aarch64 (and recipe for riscv64).
+**Acceptance:** sign a test PDF with a valid certificate.
+
+---
+
+### F5 — riscv64
+
+**Tasks**
+- Prepare environment (Arch RISC-V or Debian riscv64) with toolchain.
+- Build `pcsclite`, `ccid`, `opensc`; resolve dependencies.
+- Verify reader + ATR + certificates.
+- Browser: Firefox as target; document Chromium status.
+- Autofirma with the distribution JDK 17.
+- Measure and document performance limits.
+
+**Deliverable:** `docs/05-riscv64.md` + packages.
+**Acceptance:** same criterion as F2 on riscv64.
+
+**Main risk:** browser and JDK availability in the chosen RISC-V distribution.
+
+---
+
+### F6 — DNIe 4.0 coverage (if F2/F5 find gaps)
+
+**Tasks**
+- Run the operation battery (login, authentication, signing) with the 4.0 card.
+- Compare with `jmulticard` (`Dnie3`, `ceressc`, `PaceChat`, `GeneralAuthenticate`)
+  and with `card-dnie.c`.
+- Implement missing APDUs in OpenSC, with unit tests.
+- If ambiguous, verify the official module's behaviour with REA/Ghidra
+  (`CComm_DNIe_V5::setEAC2Channel`) and a real APDU trace.
+- Send upstream patches to OpenSC.
+
+**Deliverable:** patches + tests + `docs/06-dnie4.md`.
+**Acceptance:** signing and authentication with DNIe 4.0 on both architectures.
+
+**This is the real engineering phase.** The others are integration and packaging.
+
+---
+
+### F7 — Packaging
+
+**Tasks**
+- PKGBUILD for Arch/ALARM and Arch RISC-V:
+  - `dnie-pkcs11-compat`
+  - `autofirma` (or adaptation of the AUR package)
+  - `dnie-stack` meta-package
+- Debian: `libpkcs11-dnie-compat` with clear `Provides/Conflicts`.
+- Pin checksums, versions and dependencies.
+- Do not break official-module installations on x86-64.
+
+**Deliverable:** `packaging/` + installable packages.
+**Acceptance:** clean install on a machine with no prior DNIe setup, and
+documented coexistence with the official module.
+
+---
+
+### F8 — Validation, documentation and upstream
+
+**Tasks**
+- Executed and signed test matrix (date, versions, architecture).
+- Installation guides per distribution and architecture.
+- Known limitations and diagnostics.
+- Upstream PRs: OpenSC (if changed), AUR, documentation.
+- Publish the repository with a clear license.
+
+**Deliverable:** final documentation + release.
+**Acceptance:** a third party can repeat the process using only the documentation.
+
+---
+
+## 6. Test matrix
+
+| # | Test | x86-64 | aarch64 | riscv64 | Needs PIN |
+|---|---|---|---|---|---|
+| T1 | `pcsc_scan` detects reader | ✅ | | | no |
+| T2 | DNIe ATR | ✅ | | | no |
+| T3 | `opensc-tool -n` = `dnie` | ✅ | | | no |
+| T4 | `pkcs15-tool --list-certificates` (3 certs) | ✅ | | | no |
+| T5 | `pkcs11-tool -L/-O` through the shim | | | | no |
+| T6 | Firefox lists the certificates | | | | no |
+| T7 | TLS authentication on a site | | | | **yes** |
+| T8 | PDF signing with Autofirma | | | | **yes** |
+| T9 | Signing through PKCS#11 (`C_Sign`) | | | | **yes** |
+| T10 | Clean install from package | | | | no |
+
+**Golden rule:** T1–T6 and T10 do not spend PIN attempts. T7–T9 only with a
+verified PIN and valid certificates. Never automate PIN attempts: 3 failures
+block the card.
+
+---
+
+## 7. Risks and mitigations
+
+| Risk | Impact | Mitigation |
+|---|---|---|
+| The official binary cannot be ported | High | Replace with OpenSC + shim; stated from day one |
+| OpenSC does not fully cover DNIe 4.0 | High | F6 with jmulticard as reference; upstream patches |
+| Expired certificates | High | Renew before T7–T9; meanwhile validate T1–T6 |
+| Browser on riscv64 | Medium | Firefox; Chromium not blocking |
+| JDK 17 on riscv64 | Medium | Distribution package; fallback: build |
+| Autofirma assumes x86 paths | Low | Review launcher; packaging patch |
+| USB reader on ARM boards | Low | Test standard CCID; avoid hubs |
+| Licensing | Medium | OpenSC LGPL, Autofirma GPL/EUPL, jmulticard LGPL/EUPL; do not redistribute a modified official binary |
+
+---
+
+## 8. Licenses and legal limits
+
+- The project is licensed under **GPL-3.0-or-later** (see `LICENSE`).
+- The official binary is **not** decompiled or rebuilt for redistribution: its
+  license does not allow it and there is no source.
+- The shim and OpenSC are independent implementations; the documentation states
+  that they are **not** the official module.
+- Reverse engineering for interoperability: allowed in the EU (Directive
+  2009/24/EC, art. 6) and in Spain (TRLPI art. 100.2). Limited to protocol and
+  compatibility.
+- Forbidden: attacking the PIN, extracting keys, bypassing EAC/PACE for illicit
+  purposes.
+
+---
+
+## 9. Repository layout
+
+```
+dni-e/
+├── PLAN.md
+├── README.md
+├── REPORT.md
+├── LICENSE
+├── docs/
+│   ├── 00-environment.md
+│   ├── 01-matrix.md
+│   ├── 02-aarch64.md
+│   ├── 03-shim.md
+│   ├── 04-autofirma.md
+│   ├── 05-riscv64.md
+│   └── 06-dnie4.md
+├── src/
+│   └── pkcs11-shim/
+│       ├── Makefile
+│       ├── dnie_shim.c
+│       ├── dnie-compat.module
+│       └── dnie-compat.conf.example
+├── packaging/
+│   ├── arch/
+│   └── debian/
+├── scripts/
+│   ├── verify-stack.sh
+│   ├── verify-card.sh
+│   └── setup-debian.sh
+└── tests/
+    ├── test-shim-paths.sh
+    └── run-matrix.sh
+```
+
+---
+
+## 10. Ordered backlog
+
+1. F0: create repo, toolchain and x86-64 snapshot.
+2. F1: component matrix (document).
+3. F2: aarch64 base (pcsc + opensc) and T1–T4.
+4. F3: PKCS#11 shim and T5.
+5. F4: Autofirma on aarch64 and T8.
+6. F5: riscv64 base and T1–T4.
+7. F3/F4 on riscv64 and T6.
+8. F6: DNIe 4.0 coverage (only if gaps exist).
+9. F7: packages.
+10. F8: documentation, signed matrix and upstream.
+
+---
+
+## 11. Definition of Done
+
+- [ ] T1–T6 and T10 green on aarch64 and riscv64.
+- [ ] T7–T9 green with valid certificates.
+- [ ] Installable and reproducible packages on both architectures.
+- [ ] The shim does not break existing x86-64 installations.
+- [ ] Documentation sufficient for a third party to repeat it.
+- [ ] Limitations and differences from the official module published.
+
+---
+
+## 12. Hardware prerequisites
+
+| Element | Status |
+|---|---|
+| x86-64 development machine | ✅ available |
+| CCID reader (AU9540 detected) | ✅ available |
+| DNIe 4.0 | ✅ available (expired certificates) |
+| aarch64 board | ✅ Orange Pi 5 |
+| riscv64 board | ✅ VisionFive 2 |
+| DNIe 3.0 for cross-testing | ❓ optional |
+
+---
+
+## 13. Note on the package name
+
+To avoid confusion and legal issues, the package is called
+**`dnie-pkcs11-compat`** (or `libpkcs11-dnie-compat`) and is **not** presented as
+the official DGP/FNMT module. The shim may occupy
+`/usr/lib/libpkcs11-dnie.so` for compatibility, but `C_GetInfo` and the
+documentation identify it as an independent implementation based on OpenSC.

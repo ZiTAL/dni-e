@@ -1,0 +1,3 @@
+module: /usr/lib/libpkcs11-dnie.so
+# Independent implementation based on OpenSC. Not the official module.
+# Registered under its own name to avoid confusion with the official identity.

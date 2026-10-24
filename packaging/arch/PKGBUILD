@@ -1,0 +1,26 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Maintainer: dni-e contributors
+pkgname=dnie-pkcs11-compat
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="PKCS#11 compatibility module for the Spanish DNIe (OpenSC-based)"
+arch=('x86_64' 'aarch64' 'riscv64')
+license=('GPL-3.0-or-later')
+depends=('glibc' 'opensc' 'p11-kit')
+provides=('libpkcs11-dnie')
+conflicts=('libpkcs11-dnie')
+options=('!strip')
+source=("$pkgname-$pkgver.tar.gz")
+sha256sums=('SKIP')
+
+build() {
+  cd "$pkgname-$pkgver"
+  make
+}
+
+package() {
+  cd "$pkgname-$pkgver"
+  make install DESTDIR="$pkgdir" PREFIX=/usr
+  install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+  install -Dm644 README.md "$pkgdir/usr/share/doc/$pkgname/README.md"
+}
