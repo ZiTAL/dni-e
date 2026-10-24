@@ -43,6 +43,9 @@ if [ "${readers:-0}" -gt 0 ]; then
   pcsc_scan -r 2>/dev/null | grep '^[0-9]\+:' | sed 's/^/     /'
 else
   bad "no reader detected (connect a CCID reader over USB)"
+  if command -v lsusb >/dev/null 2>&1 && lsusb 2>/dev/null | grep -qiE 'smartcard|smart card|058f:9540'; then
+    warn "USB smartcard reader present but PC/SC cannot see it; check polkit access_pcsc (see docs/02-aarch64.md)"
+  fi
 fi
 
 echo

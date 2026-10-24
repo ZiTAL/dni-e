@@ -10,7 +10,7 @@ RISC-V 64, without depending on the official `libpkcs11-dnie.so`
 |---|---|
 | F0 — Environment and x86-64 baseline | ✅ |
 | F1 — Component matrix | ✅ |
-| F2 — Base stack on aarch64 | ✅ installed and validated (no reader yet) |
+| F2 — Base stack on aarch64 | ✅ T1–T6 validated with the real card |
 | F3 — PKCS#11 shim | ✅ x86-64, aarch64 and riscv64 |
 | F4 — Autofirma | ✅ XAdES/PAdES signing on both architectures |
 | F5 — riscv64 | ✅ installed and validated (no reader yet) |
@@ -40,6 +40,7 @@ See [docs/03-shim.md](docs/03-shim.md).
 ```bash
 ./scripts/verify-stack.sh      # installed stack and reader
 ./scripts/verify-card.sh       # card, ATR and certificates (no PIN)
+./tests/test-nss.sh            # NSS/Firefox sees the DNIe certificates
 ./tests/test-shim-paths.sh     # 21 resolution, security and portability cases
 ./tests/run-matrix.sh          # runs the checks and archives the result
 ```

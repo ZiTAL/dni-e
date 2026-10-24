@@ -2,7 +2,7 @@
 
 **Host:** ARM64 board · Orange Pi 5 · Debian 13 (trixie) · kernel 6.1.115
 **Date:** 2026-10-24
-**Status:** ✅ stack installed and validated without a card (physical reader missing)
+**Status:** ✅ stack and reader validated (T1–T6); signing pending certificate renewal
 
 ---
 
@@ -30,23 +30,54 @@ OpenSC module on Debian: `/usr/lib/aarch64-linux-gnu/opensc-pkcs11.so`.
 /usr/share/p11-kit/modules/dnie-compat.module
 ```
 
-Tests:
+## 3. polkit: required on headless / SSH access
 
-```text
-$ pkcs11-tool --module /usr/lib/libpkcs11-dnie.so -L
-No slots.                # no reader connected; the module loads fine
+pcscd authorizes clients through polkit. On a headless machine or over SSH
+there is no active local session, so the default policy denies
+`org.debian.pcsc-lite.access_pcsc` and the reader appears "missing" even though
+`lsusb` shows it:
 
-$ DNIE_COMPAT_DEBUG=1 pkcs11-tool --module /usr/lib/libpkcs11-dnie.so -L
-dnie-compat: probando /usr/lib/opensc-pkcs11.so
-dnie-compat: ... cannot open shared object file
-dnie-compat: probando /usr/lib/aarch64-linux-gnu/opensc-pkcs11.so
+```
+IsClientAuthorized() Process ... is NOT authorized for action: access_pcsc
+Rejected unauthorized PC/SC client
 ```
 
-Multiarch resolution works. `p11-kit list-modules` loads the module but shows it
-merged with `opensc-pkcs11` because both report the same library identity; this
-is cosmetic and does not affect loading.
+Fix installed at `/etc/polkit-1/rules.d/50-pcscd.rules` (template:
+`packaging/polkit/50-pcscd.rules`), allowing the `plugdev` group:
 
-## 3. Autofirma
+```javascript
+polkit.addRule(function(action, subject) {
+    if ((action.id == "org.debian.pcsc-lite.access_pcsc" ||
+         action.id == "org.debian.pcsc-lite.access_card") &&
+        subject.isInGroup("plugdev")) {
+        return polkit.Result.YES;
+    }
+});
+```
+
+Then `systemctl restart polkit`. `scripts/setup-debian.sh` installs it
+automatically.
+
+## 4. Reader and card validated
+
+```
+Reader 0: Alcor Micro AU9540 00 00
+Card state: Card inserted
+ATR: 3B 7F 96 00 00 00 6A 44 4E 49 65 10 01 01 55 04 21 03 90 00
+OpenSC: dnie
+Certificates: CertAutenticacion, CertFirmaDigital, CertCAIntermediaDGP
+```
+
+| Test | Result |
+|---|---|
+| T1 — `pcsc_scan` detects the reader | ✅ `Alcor Micro AU9540` |
+| T2 — DNIe ATR | ✅ `3B 7F 96 …` |
+| T3 — `opensc-tool -n` | ✅ `dnie` |
+| T4 — `pkcs15-tool --list-certificates` | ✅ 3 certificates |
+| T5 — `pkcs11-tool -L/-O` through the shim | ✅ token `DNI electrónico`, 3 certs and public keys |
+| T6 — NSS (Firefox layer) lists the certificates | ✅ 3 certs through the shim (`tests/test-nss.sh`) |
+
+## 5. Autofirma
 
 The AUR package (contents `any`) was installed with the launcher adapted to
 Java 21:
@@ -56,8 +87,6 @@ Java 21:
 /usr/share/java/autofirma/autofirma.jar         46 MB
 ```
 
-Tests:
-
 | Test | Result |
 |---|---|
 | GUI start under Xvfb | ✅ stays alive (timeout 124) |
@@ -65,22 +94,17 @@ Tests:
 | PAdES signing of a PDF | ✅ 55,364 bytes, `ByteRange` present |
 | PKCS#11 store signing (SoftHSM) | ✅ 5,114 bytes, `SignatureValue` present |
 
-```text
-La operacion ha terminado correctamente
-```
+Autofirma will keep hiding the real DNIe certificates while they are expired.
 
-The PKCS#11 test uses the same path as the DNIe: Autofirma → PKCS#11 module →
-card. With a reader, the module will be `libpkcs11-dnie.so`.
+## 6. Missing
 
-## 4. Missing
+Only **valid certificates** for T7–T9. The certificates expired on 2024-10-18
+and renewal is in person.
 
-1. **USB reader.** The machine has no reader connected (`lsusb` only shows a
-   serial adapter). Without a reader, T1–T4 cannot run.
-2. **Valid certificates** for T7–T9.
-
-## 5. Reproduce
+## 7. Reproduce
 
 ```bash
 sudo ./scripts/setup-debian.sh
 ./scripts/verify-stack.sh
+./scripts/verify-card.sh
 ```

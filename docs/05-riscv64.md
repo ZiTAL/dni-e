@@ -69,5 +69,15 @@ token was initialised with `pkcs11-tool --init-token` (the packaged
 
 ## 5. Missing
 
-1. **USB reader.** `lsusb` only shows a VIA Labs hub.
+1. **USB reader on this board.** The polkit rule is already installed
+   (`/etc/polkit-1/rules.d/50-pcscd.rules`), so the reader should be visible as
+   soon as it is connected. The single available reader is currently validated
+   on the ARM64 board.
 2. **Valid certificates** for T7–T9.
+
+## 6. polkit note
+
+On headless or SSH sessions, pcscd denies `access_pcsc` unless the
+`plugdev` group is authorized. The rule from
+`packaging/polkit/50-pcscd.rules` is installed by `scripts/setup-debian.sh`.
+See [02-aarch64.md](02-aarch64.md#3-polkit-required-on-headless--ssh-access).

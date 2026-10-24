@@ -18,7 +18,7 @@
 | Autofirma | ✅ Java 21 | ✅ Java 25 |
 | XAdES / PAdES signing | ✅ | ✅ |
 | PKCS#11 signing | ✅ | ✅ |
-| USB reader | ❌ not connected | ❌ not connected |
+| USB reader | ✅ validated (T1–T5) | ❌ not connected |
 
 **No PIN attempt has been spent.** Everything was tested without a card or with
 laboratory stores (PKCS#12 and SoftHSM).
@@ -38,6 +38,9 @@ laboratory stores (PKCS#12 and SoftHSM).
 | PKCS#11 store signing | ✅ 5,114 B | ✅ 5,115 B |
 | `SignatureValue` present | ✅ | ✅ |
 | 21 resolution/security/portability tests | ✅ | ✅ |
+| Reader + ATR + certificates (T1–T4, real DNIe 4.0) | ✅ | ⏳ reader not moved yet |
+| Shim PKCS#11 objects (T5) | ✅ | ⏳ reader not moved yet |
+| NSS/Firefox certificate listing (T6) | ✅ | ⏳ reader not moved yet |
 
 The PKCS#11 test is the important one: it is exactly the path the DNIe will use
 (Autofirma → PKCS#11 module → card). It was done with SoftHSM because there is
@@ -103,11 +106,16 @@ openjdk-21-jre 21.0.12 · libnss3-tools · xvfb · xauth · softhsm2
 
 ## 5. What you need to do
 
-### 5.1 USB reader (both)
+### 5.1 USB reader
 
-**Neither machine has a reader connected.** The ARM64 host only sees a serial
-adapter and the RISC-V host only a VIA Labs hub. Connect a CCID reader to each
-(the AU9540 from the desktop works; any CCID reader around €10 also works).
+The reader is now connected to the **ARM64 host** and validated with the real
+DNIe 4.0 card (reader, ATR, `dnie`, three certificates, PKCS#11 objects).
+The **RISC-V host** still has no reader; the polkit rule is already installed
+there, so it will work as soon as the reader is moved.
+
+On headless or SSH access, pcscd needs the polkit rule shipped in
+`packaging/polkit/50-pcscd.rules`; otherwise the reader is invisible even
+though `lsusb` shows it.
 
 ### 5.2 Certificates
 

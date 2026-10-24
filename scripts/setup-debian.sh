@@ -11,20 +11,30 @@ fi
 
 root="${1:-$(cd "$(dirname "$0")/.." && pwd)}"
 
-echo "== 1/4 Packages =="
+echo "== 1/5 Packages =="
 apt-get update
 DEBIAN_FRONTEND=noninteractive apt-get install -y \
   pcscd libccid pcsc-tools opensc opensc-pkcs11 p11-kit libnss3-tools
 
-echo "== 2/4 PC/SC service =="
+echo "== 2/5 polkit rule (headless / remote access) =="
+if [ -d /etc/polkit-1/rules.d ]; then
+  install -Dm644 "$root/packaging/polkit/50-pcscd.rules" \
+    /etc/polkit-1/rules.d/50-pcscd.rules
+  systemctl try-restart polkit 2>/dev/null || true
+  echo "installed: /etc/polkit-1/rules.d/50-pcscd.rules (group plugdev)"
+else
+  echo "polkit rules.d not found; skipped"
+fi
+
+echo "== 3/5 PC/SC service =="
 systemctl enable --now pcscd.socket
 systemctl is-active pcscd.socket
 
-echo "== 3/4 PKCS#11 shim =="
+echo "== 4/5 PKCS#11 shim =="
 make -C "$root/src/pkcs11-shim"
 make -C "$root/src/pkcs11-shim" install PREFIX=/usr
 
-echo "== 4/4 Check =="
+echo "== 5/5 Check =="
 pkcs11-tool --module /usr/lib/libpkcs11-dnie.so -L || true
 
 cat <<'EOF'

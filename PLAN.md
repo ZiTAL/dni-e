@@ -155,6 +155,9 @@ until its criterion is met.
 **Acceptance:** full web authentication on aarch64 with the correct PIN
 (requires valid certificates).
 
+**Progress (2026-10-24):** T1–T5 pass on the ARM64 board with the real DNIe
+4.0 card. T7–T9 remain blocked by expired certificates.
+
 **Blocking note:** current certificates expired on 2024-10-18. Without renewal,
 authentication and signing cannot be validated; detection, ATR, certificate
 listing and PKCS#15 structure can.
@@ -267,12 +270,12 @@ documented coexistence with the official module.
 
 | # | Test | x86-64 | aarch64 | riscv64 | Needs PIN |
 |---|---|---|---|---|---|
-| T1 | `pcsc_scan` detects reader | ✅ | | | no |
-| T2 | DNIe ATR | ✅ | | | no |
-| T3 | `opensc-tool -n` = `dnie` | ✅ | | | no |
-| T4 | `pkcs15-tool --list-certificates` (3 certs) | ✅ | | | no |
-| T5 | `pkcs11-tool -L/-O` through the shim | | | | no |
-| T6 | Firefox lists the certificates | | | | no |
+| T1 | `pcsc_scan` detects reader | ✅ | ✅ | | no |
+| T2 | DNIe ATR | ✅ | ✅ | | no |
+| T3 | `opensc-tool -n` = `dnie` | ✅ | ✅ | | no |
+| T4 | `pkcs15-tool --list-certificates` (3 certs) | ✅ | ✅ | | no |
+| T5 | `pkcs11-tool -L/-O` through the shim | ✅ | ✅ | | no |
+| T6 | Firefox lists the certificates | | ✅ | | no |
 | T7 | TLS authentication on a site | | | | **yes** |
 | T8 | PDF signing with Autofirma | | | | **yes** |
 | T9 | Signing through PKCS#11 (`C_Sign`) | | | | **yes** |
@@ -295,6 +298,7 @@ block the card.
 | JDK 17 on riscv64 | Medium | Distribution package; fallback: build |
 | Autofirma assumes x86 paths | Low | Review launcher; packaging patch |
 | USB reader on ARM boards | Low | Test standard CCID; avoid hubs |
+| polkit denies PC/SC on headless/SSH | Medium | Install `packaging/polkit/50-pcscd.rules` (group `plugdev`); `setup-debian.sh` does it |
 | Licensing | Medium | OpenSC LGPL, Autofirma GPL/EUPL, jmulticard LGPL/EUPL; do not redistribute a modified official binary |
 
 ---
