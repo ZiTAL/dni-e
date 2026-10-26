@@ -19,3 +19,7 @@ __pycache__/
 # Release build artifacts
 prebuilt/
 dist/
+
+# Signing test output (may contain personal data)
+/firmado.pdf
+/*.sig0

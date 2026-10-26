@@ -197,6 +197,6 @@ The private key was generated without a passphrase and lives in the local
 - [ ] Run `verify-card.sh` and `test-nss.sh`.
 - [ ] Create/refresh the Firefox profile and restart Firefox.
 - [ ] T7: authenticate on Cl@ve or AEAT with the PIN.
-- [ ] T8: sign a PDF with Autofirma and the PIN.
+- [x] T8: PAdES signed on x86-64 (2026-10-26); boards pending.
 - [ ] T9 (optional): `pkcs11-tool --test --login`.
 - [ ] Update `REPORT.md` and `docs/06-dnie4.md`.

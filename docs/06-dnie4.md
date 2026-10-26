@@ -83,7 +83,7 @@ It serves as an executable reference if OpenSC fails on any operation.
 | Certificate listing | ✅ |
 | PIN login | ⏳ pending (certificates valid since 2026-10-26) |
 | PKCS#11 signing (`C_Sign`) | ⏳ |
-| Autofirma with the same PIN | ⏳ |
+| Autofirma with the same PIN | ✅ (x86-64, 2026-10-26) |
 
 If any fails, the order of action is: APDU trace → compare with `jmulticard` →
 patch `card-dnie.c` → upstream.

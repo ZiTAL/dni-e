@@ -67,10 +67,24 @@ Requirement on the target: `jdk17-openjdk` (provides `java-runtime=17`).
 | Package declares `any` | ✅ |
 | No native binaries in the package | ✅ (jar + scripts) |
 | Startup with JRE 17 on x86-64 | ✅ |
-| PDF signing on x86-64 | ⏳ pending PIN test (certificates valid until 2028-10-26) |
+| PDF signing on x86-64 | ✅ PAdES signed with the DNIe; CMS verified (2026-10-26) |
 | Startup on aarch64 | ✅ (validated under Xvfb) |
 | Startup on riscv64 | ✅ (CLI mode) |
 | XAdES/PAdES/PKCS#11 signing on both | ✅ |
+
+## 4.1 Note on `pdfsig`
+
+`pdfsig` (poppler) may report **"Signature is Invalid"** for a DNIe PAdES
+signature because the signing certificate uses `keyUsage = Non Repudiation`
+instead of `digitalSignature`. The signature itself is valid:
+
+```bash
+openssl cms -verify -binary -inform DER -in signature.cms   -content signed-content.bin -CAfile dnie-ca.pem -partial_chain -purpose any
+# CMS Verification successful
+```
+
+Autofirma and Adobe accept these signatures. Do not treat the poppler message
+as proof of a broken signature.
 
 ## 5. Debian note
 

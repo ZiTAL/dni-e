@@ -296,7 +296,7 @@ tests pass; no architecture-specific code.
 | T5 | `pkcs11-tool -L/-O` through the shim | ✅ | ✅ | ✅ | no |
 | T6 | Firefox lists the certificates | | ✅ | ✅ | no |
 | T7 | TLS authentication on a site | | | | **yes** |
-| T8 | PDF signing with Autofirma | | | | **yes** |
+| T8 | PDF signing with Autofirma | ✅ | | | **yes** |
 | T9 | Signing through PKCS#11 (`C_Sign`) | | | | **yes** |
 | T10 | Clean install from package | | | | no |
 

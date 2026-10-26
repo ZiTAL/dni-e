@@ -44,6 +44,12 @@ laboratory stores (PKCS#12 and SoftHSM).
 | Shim PKCS#11 objects (T5) | ✅ | ✅ |
 | NSS/Firefox certificate listing (T6) | ✅ | ✅ |
 
+The real DNIe signing test (T8) was performed on the x86-64 workstation with
+the renewed card: Autofirma produced a PAdES signature and `openssl cms`
+verified it, with the chain to the DNIe CA (`-partial_chain`). `pdfsig` reports
+a false negative because the DNIe signing certificate uses
+`keyUsage = Non Repudiation` instead of `digitalSignature`.
+
 The PKCS#11 test is the important one: it is exactly the path the DNIe will use
 (Autofirma → PKCS#11 module → card). It was done with SoftHSM because there is
 no reader yet; replacing SoftHSM with `libpkcs11-dnie.so` keeps the same flow.
