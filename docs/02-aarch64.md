@@ -122,12 +122,12 @@ Java 21:
 | PAdES signing of a PDF | ✅ 55,364 bytes, `ByteRange` present |
 | PKCS#11 store signing (SoftHSM) | ✅ 5,114 bytes, `SignatureValue` present |
 
-Autofirma will keep hiding the real DNIe certificates while they are expired.
+Autofirma shows the real DNIe certificates once they are valid and the card responds.
 
 ## 6. Missing
 
-Only **valid certificates** for T7–T9. The certificates expired on 2024-10-18
-and renewal is in person.
+None for T1–T6. The certificates were renewed on 2026-10-26; T7–T9 are pending
+the PIN tests.
 
 ## 7. Reproduce
 

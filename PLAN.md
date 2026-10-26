@@ -155,12 +155,9 @@ until its criterion is met.
 **Acceptance:** full web authentication on aarch64 with the correct PIN
 (requires valid certificates).
 
-**Progress (2026-10-24):** T1–T5 pass on the ARM64 board with the real DNIe
-4.0 card. T7–T9 remain blocked by expired certificates.
-
-**Blocking note:** current certificates expired on 2024-10-18. Without renewal,
-authentication and signing cannot be validated; detection, ATR, certificate
-listing and PKCS#15 structure can.
+**Progress (2026-10-26):** T1–T6 pass on the ARM64 board with the real DNIe
+4.0 card. Certificates were renewed on 2026-10-26; T7–T9 are pending the PIN
+tests.
 
 ---
 
@@ -471,7 +468,7 @@ dni-e/
 |---|---|
 | x86-64 development machine | ✅ available |
 | CCID reader (AU9540 detected) | ✅ available |
-| DNIe 4.0 | ✅ available (expired certificates) |
+| DNIe 4.0 | ✅ available (certificates renewed 2026-10-26) |
 | aarch64 board | ✅ Orange Pi 5 |
 | riscv64 board | ✅ VisionFive 2 |
 | DNIe 3.0 for cross-testing | ❓ optional |

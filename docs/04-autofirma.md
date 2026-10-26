@@ -67,7 +67,7 @@ Requirement on the target: `jdk17-openjdk` (provides `java-runtime=17`).
 | Package declares `any` | ✅ |
 | No native binaries in the package | ✅ (jar + scripts) |
 | Startup with JRE 17 on x86-64 | ✅ |
-| PDF signing on x86-64 | ⏳ blocked by expired certificates |
+| PDF signing on x86-64 | ⏳ pending PIN test (certificates valid until 2028-10-26) |
 | Startup on aarch64 | ✅ (validated under Xvfb) |
 | Startup on riscv64 | ✅ (CLI mode) |
 | XAdES/PAdES/PKCS#11 signing on both | ✅ |

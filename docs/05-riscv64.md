@@ -97,5 +97,5 @@ Deployed in `~/autofirma` with the launcher adapted to Java 25.
 
 ## 7. Missing
 
-Only **valid certificates** for T7–T9. They expired on 2024-10-18 and renewal is
-in person.
+None for T1–T6. The certificates were renewed on 2026-10-26; T7–T9 are pending
+the PIN tests.

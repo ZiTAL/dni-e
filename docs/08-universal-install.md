@@ -179,7 +179,7 @@ it installed and the polkit rule (only if it matches the shipped one). It does
 | `LIBUSB_ERROR_IO` / reader init failed | USB device in a bad state | Reset the port: unbind/bind the device and restart `pcscd` (see docs/02) |
 | `dpkg`/`rpm` conflict with the FNMT package | Both provide `libpkcs11-fnmtdnie.so` | Remove the official package or use `--prefix` |
 | Browser does not list certificates | Module not loaded or browser not restarted | `./scripts/setup-browser.sh <module>` and restart |
-| Autofirma says no certificates | DNIe certificates expired | Renew them in person |
+| Autofirma says no certificates | Restart Autofirma; check the card/reader | Restart it or reseat the card |
 | `make` cannot find `cc` | No compiler | Install `build-essential` / `base-devel` / `build-base` |
 
 ## 10. Security notes

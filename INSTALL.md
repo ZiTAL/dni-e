@@ -126,7 +126,7 @@ the reader contact.
 | `lsusb` shows the reader but PC/SC does not | polkit: install `packaging/polkit/50-pcscd.rules`; user must be in `plugdev` |
 | No readers | `systemctl enable --now pcscd.socket` (or OpenRC equivalent) |
 | Browser shows no certificates | restart the browser; run `tests/test-nss.sh` |
-| Autofirma shows no certificates | DNIe certificates expired; renew them in person |
+| Autofirma shows no certificates | Restart Autofirma; check the card/reader |
 | Package conflict with the FNMT module | both provide `libpkcs11-fnmtdnie.so`; remove one |
 
 Full guide: `docs/08-universal-install.md`.

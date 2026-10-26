@@ -2,6 +2,9 @@
 
 **Status captured:** 2026-10-25 · release `v0.2.1`
 
+**Update 2026-10-26:** the certificates were renewed and verified on the card
+(valid until 2028-10-26). Step 1 is complete; continue at step 2.
+
 This is the handover document. Everything is installed and validated up to
 T6; T7–T9 only need the DNIe certificates to be renewed.
 
@@ -17,7 +20,7 @@ T6; T7–T9 only need the DNIe certificates to be renewed.
 | RISC-V board | VisionFive 2, Debian 13, full stack + Autofirma |
 | Reader | Alcor Micro AU9540 (CCID), currently on the ARM64 board |
 | Card | DNIe 4.0, ATR `3B 7F 96 … 04 21 03 90 00` |
-| Certificates | **expired** on 2024-10-18 (auth and signing) |
+| Certificates | renewed 2026-10-26, valid until 2028-10-26 |
 
 Validated without PIN: T1–T6 on both boards, plus 21 shim tests on x86-64,
 aarch64 and riscv64. See `REPORT.md` and `docs/`.
@@ -52,8 +55,9 @@ for id in $(pkcs15-tool --list-certificates | awk '/^X.509/{f=1} f&&/ID *:/{prin
 done
 ```
 
-Expected after renewal: the two personal certificates show a date around 2028,
-not `Oct 18 06:37:49 2024 GMT`.
+Expected after renewal: the two personal certificates show
+`Oct 26 14:51:34 2028 GMT` instead of `Oct 18 06:37:49 2024 GMT`. This was
+confirmed on 2026-10-26.
 
 ### Step 2 — Firefox profile
 
@@ -150,7 +154,7 @@ sudo dpkg -i dnie-pkcs11-compat_0.2.1_arm64.deb
 | Reader re-enumerates (`LIBUSB_ERROR_IO`) | Reset the USB port and restart `pcscd` (see `docs/02-aarch64.md`) |
 | Firefox profile has no module | Run `make-firefox-profile.sh` or `setup-browser.sh` after the first launch |
 | Headless browser asks for the PIN | Not scriptable; use `openssl s_client` with PKCS#11 or Xvfb + VNC |
-| Autofirma shows no certificates | Certificates still expired, or Autofirma not restarted |
+| Autofirma shows no certificates | Autofirma not restarted, or the reader is unresponsive |
 | OpenSC cannot sign with DNIe 4.0 | Phase F6: APDU trace + `jmulticard` reference + patch |
 | riscv64 browser automation | No usable Chromium; Firefox headless works, TLS test via OpenSSL |
 
@@ -188,8 +192,8 @@ The private key was generated without a passphrase and lives in the local
 
 ## 8. Checklist
 
-- [ ] Renew the DNIe certificates in person.
-- [ ] Insert the card and confirm the new `notAfter` dates.
+- [x] Renew the DNIe certificates in person (done 2026-10-26).
+- [x] Insert the card and confirm the new `notAfter` dates (valid until 2028-10-26).
 - [ ] Run `verify-card.sh` and `test-nss.sh`.
 - [ ] Create/refresh the Firefox profile and restart Firefox.
 - [ ] T7: authenticate on Cl@ve or AEAT with the PIN.

@@ -2,7 +2,9 @@
 
 **Date:** 2026-10-24
 **Scope:** deploy and validate the DNIe stack on an ARM64 host (Orange Pi 5) and a RISC-V host (VisionFive 2).
-**Outcome:** both machines have the full stack installed and validated; only a physical reader and renewed certificates are missing.
+**Outcome:** both machines have the full stack installed and validated. The
+certificates were renewed on 2026-10-26 (valid until 2028-10-26); T7–T9 are
+pending the PIN tests.
 
 ---
 
@@ -118,8 +120,9 @@ setup script handles both.
 
 ### 5.2 Certificates
 
-They expired on **2024-10-18**. Without renewal, real authentication and signing
-cannot be tested. Renewal is in person.
+They were **renewed on 2026-10-26** and are valid until **2028-10-26**. The
+renewed dates were confirmed on the card and the three certificates are listed
+by OpenSC, PKCS#11 and NSS. T7–T9 remain pending the PIN tests.
 
 ---
 

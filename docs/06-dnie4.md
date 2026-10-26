@@ -2,7 +2,7 @@
 
 **Date:** 2026-10-24
 **Phase:** F6 (preliminary analysis)
-**Status:** 🟡 the driver accepts the 4.0 ATR and has the required operations; real PIN validation pending
+**Status:** 🟡 the driver accepts the 4.0 ATR and has the required operations; certificates valid since 2026-10-26, PIN/signing test pending
 
 ---
 
@@ -81,7 +81,7 @@ It serves as an executable reference if OpenSC fails on any operation.
 |---|---|
 | `opensc-tool -n` = dnie | ✅ |
 | Certificate listing | ✅ |
-| PIN login | ⏳ requires valid certificates |
+| PIN login | ⏳ pending (certificates valid since 2026-10-26) |
 | PKCS#11 signing (`C_Sign`) | ⏳ |
 | Autofirma with the same PIN | ⏳ |
 

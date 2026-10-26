@@ -60,12 +60,11 @@ false negatives.
 
 | Certificate | Valid from | Valid until | Status |
 |---|---|---|---|
-| `CertAutenticacion` | 2022-10-18 | 2024-10-18 | ❌ expired |
-| `CertFirmaDigital` | 2022-10-18 | 2024-10-18 | ❌ expired |
+| `CertAutenticacion` | 2026-10-26 | 2028-10-26 | ✅ valid (renewed) |
+| `CertFirmaDigital` | 2026-10-26 | 2028-10-26 | ✅ valid (renewed) |
 | `CertCAIntermediaDGP` | 2014-06-13 | 2029-06-13 | ✅ valid |
 
-**Consequence:** T1–T6 and T10 (no PIN) can be validated, but **not T7–T9**
-until the certificates are renewed at a DNIe office.
+**Consequence:** T1–T6 are validated. T7–T9 can now be tested with the PIN.
 
 ## 4. Services and configuration
 
@@ -76,7 +75,7 @@ pcscd.socket   enabled + active
 - The default Firefox profile has the `OpenSC` module loaded in
   `pkcs11.txt`.
 - `p11-kit list-modules` exposes `opensc` correctly.
-- Autofirma detects the card through JMulticard but hides expired certificates.
+- Autofirma detects the card through JMulticard; it hides expired certificates or reports none if the card is unresponsive.
 
 ## 5. F0 acceptance criteria
 

@@ -122,8 +122,8 @@ Three wrong PIN attempts block the card. Do not use these commands to guess.
 
 ## 8. Caveats
 
-- All of this assumes **valid certificates**. The current test card expired on
-  2024-10-18, so T7–T9 remain blocked until renewal.
+- Certificates were renewed on 2026-10-26 (valid until 2028-10-26); T7–T9
+  are now pending only the PIN tests.
 - Playwright's bundled Firefox is not available for every architecture; the
   tests use the system Chromium through `executablePath`.
 - On riscv64 there is no usable Chromium package in Debian trixie; Firefox
