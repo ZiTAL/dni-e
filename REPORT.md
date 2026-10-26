@@ -50,6 +50,13 @@ verified it, with the chain to the DNIe CA (`-partial_chain`). `pdfsig` reports
 a false negative because the DNIe signing certificate uses
 `keyUsage = Non Repudiation` instead of `digitalSignature`.
 
+T7 was validated at the TLS layer on the x86-64 workstation: `scripts/test-tls-auth.sh`
+used GnuTLS with the DNIe authentication certificate and private key (PKCS#11),
+the client sent both certificates and the handshake completed
+(`RESULT: TLS client authentication OK`). Firefox's certificate manager lists
+the DNIe correctly, but its client-auth path did not send the certificate in
+our tests; that remains a browser-side issue.
+
 The PKCS#11 test is the important one: it is exactly the path the DNIe will use
 (Autofirma → PKCS#11 module → card). It was done with SoftHSM because there is
 no reader yet; replacing SoftHSM with `libpkcs11-dnie.so` keeps the same flow.

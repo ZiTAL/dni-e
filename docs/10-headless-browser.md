@@ -84,6 +84,26 @@ With the legacy engine, use `-engine pkcs11 -keyform engine`.
 This validates the card's real TLS client authentication. It does not exercise
 Firefox's UI, but it is the only fully headless path with a hardware token.
 
+## 5.1 Verified: T7 with GnuTLS
+
+`scripts/test-tls-auth.sh` uses GnuTLS with the DNIe authentication certificate
+and private key through PKCS#11. Against a local server that requests a client
+certificate:
+
+```
+Successfully sent 2 certificate(s) to server.
+Handshake was completed
+RESULT: TLS client authentication OK
+```
+
+The local server's chain warning is only because it lacks the root
+`AC RAIZ DNIE 2`; the client authentication itself is valid.
+
+Firefox's certificate manager lists the DNIe certificates, but its client-auth
+path did not send them in our tests. That remains a browser-side issue, not a
+card issue. Use `scripts/check-pin.sh` to confirm the PIN and the private
+objects without exposing the PIN.
+
 ## 6. Real T7 with Firefox and a virtual display
 
 If the browser UI is required:

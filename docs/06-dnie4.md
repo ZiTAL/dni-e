@@ -81,8 +81,8 @@ It serves as an executable reference if OpenSC fails on any operation.
 |---|---|
 | `opensc-tool -n` = dnie | ✅ |
 | Certificate listing | ✅ |
-| PIN login | ⏳ pending (certificates valid since 2026-10-26) |
-| PKCS#11 signing (`C_Sign`) | ⏳ |
+| PIN login | ✅ (2026-10-26) |
+| PKCS#11 signing (`C_Sign`) | ✅ (T8 via Autofirma) |
 | Autofirma with the same PIN | ✅ (x86-64, 2026-10-26) |
 
 If any fails, the order of action is: APDU trace → compare with `jmulticard` →

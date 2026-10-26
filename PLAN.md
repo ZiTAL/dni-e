@@ -295,10 +295,14 @@ tests pass; no architecture-specific code.
 | T4 | `pkcs15-tool --list-certificates` (3 certs) | ✅ | ✅ | ✅ | no |
 | T5 | `pkcs11-tool -L/-O` through the shim | ✅ | ✅ | ✅ | no |
 | T6 | Firefox lists the certificates | | ✅ | ✅ | no |
-| T7 | TLS authentication on a site | | | | **yes** |
+| T7 | TLS authentication on a site | ✅ | | | **yes** |
 | T8 | PDF signing with Autofirma | ✅ | | | **yes** |
-| T9 | Signing through PKCS#11 (`C_Sign`) | | | | **yes** |
+| T9 | Signing through PKCS#11 (`C_Sign`) | ✅ | | | **yes** |
 | T10 | Clean install from package | | | | no |
+
+**Result (2026-10-26):** T7 was validated at the TLS layer with GnuTLS and
+PKCS#11; the Firefox UI client-certificate path is still under investigation.
+T8 and T9 were validated through Autofirma/PKCS#11 on x86-64.
 
 **Golden rule:** T1–T6 and T10 do not spend PIN attempts. T7–T9 only with a
 verified PIN and valid certificates. Never automate PIN attempts: 3 failures

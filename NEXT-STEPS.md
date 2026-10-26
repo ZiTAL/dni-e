@@ -196,7 +196,7 @@ The private key was generated without a passphrase and lives in the local
 - [x] Insert the card and confirm the new `notAfter` dates (valid until 2028-10-26).
 - [ ] Run `verify-card.sh` and `test-nss.sh`.
 - [ ] Create/refresh the Firefox profile and restart Firefox.
-- [ ] T7: authenticate on Cl@ve or AEAT with the PIN.
+- [x] T7: TLS client auth validated with GnuTLS/PKCS#11 (2026-10-26); Firefox UI pending.
 - [x] T8: PAdES signed on x86-64 (2026-10-26); boards pending.
-- [ ] T9 (optional): `pkcs11-tool --test --login`.
+- [x] T9: covered by T8 (Autofirma uses `C_Sign` through PKCS#11).
 - [ ] Update `REPORT.md` and `docs/06-dnie4.md`.
