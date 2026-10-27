@@ -8,6 +8,12 @@ fail=0
 ok()  { printf '  ✅ %s\n' "$1"; }
 bad() { printf '  ❌ %s\n' "$1"; fail=1; }
 
+# OpenSC caches the PKCS#15 file system and does not invalidate it when the
+# certificates are renewed. A stale cache makes the old (expired) certificates
+# and their old IDs appear. Clear it before reading; it is repopulated from the
+# card immediately.
+pkcs15-tool --clear-cache >/dev/null 2>&1 || true
+
 echo "== Card state =="
 state=$(timeout 6 pcsc_scan 2>/dev/null | grep 'Card state' | head -1 | sed 's/^ *//')
 atr=$(timeout 6 pcsc_scan 2>/dev/null | grep -o 'ATR: .*' | head -1)

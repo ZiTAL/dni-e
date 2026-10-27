@@ -2,7 +2,7 @@
 
 **Host:** ARM64 board · Orange Pi 5 · Debian 13 (trixie) · kernel 6.1.115
 **Date:** 2026-10-24
-**Status:** ✅ stack and reader validated (T1–T6); signing pending certificate renewal
+**Status:** ✅ stack and reader validated (T1–T6, T10); T7–T9 pending the interactive PIN test
 
 ---
 
@@ -78,6 +78,25 @@ Certificates: CertAutenticacion, CertFirmaDigital, CertCAIntermediaDGP
 | T4 — `pkcs15-tool --list-certificates` | ✅ 3 certificates |
 | T5 — `pkcs11-tool -L/-O` through the shim | ✅ token `DNI electrónico`, 3 certs and public keys |
 | T6 — NSS (Firefox layer) lists the certificates | ✅ 3 certs through the shim (`tests/test-nss.sh`) |
+| T10 — clean install from the Debian package | ✅ `dpkg -r` + `dpkg -i dnie-pkcs11-compat_0.2.1_arm64.deb`, no source leftovers |
+
+### Stale OpenSC cache after certificate renewal
+
+OpenSC caches the card's PKCS#15 file system in `~/.cache/opensc/` and does
+**not** invalidate it when the DNIe certificates are renewed. After the
+2026-10-26 renewal the board kept showing the old certificates (expired
+2024-10-18) and their old IDs, while the same card read on another machine
+showed the new ones. The cache key (`<serial>_NODATE_*`) has no expiry, so the
+stale data can persist indefinitely.
+
+```bash
+pkcs15-tool --clear-cache      # or: rm -rf ~/.cache/opensc
+```
+
+`scripts/verify-card.sh` now clears the cache before reading, and
+`test-tls-auth.sh` no longer depends on `p11tool` listings to find the
+certificate and key (GnuTLS 3.8.9 on aarch64 fails to parse OpenSC's
+certificate objects with `Error in crt_list_import`).
 
 ### USB re-enumeration (`LIBUSB_ERROR_IO`)
 
@@ -126,8 +145,10 @@ Autofirma shows the real DNIe certificates once they are valid and the card resp
 
 ## 6. Missing
 
-None for T1–T6. The certificates were renewed on 2026-10-26; T7–T9 are pending
-the PIN tests.
+T1–T6 and T10 are green. T7–T9 need the interactive PIN test; the commands are
+in `NEXT-STEPS.md` §3 and `docs/10-headless-browser.md`. The board is headless
+(no local display), so the TLS layer is tested with `scripts/test-tls-auth.sh`
+and Firefox's UI would need Xvfb + VNC.
 
 ## 7. Reproduce
 
@@ -135,4 +156,5 @@ the PIN tests.
 sudo ./scripts/setup-debian.sh
 ./scripts/verify-stack.sh
 ./scripts/verify-card.sh
+pkcs15-tool --clear-cache          # after a certificate renewal
 ```

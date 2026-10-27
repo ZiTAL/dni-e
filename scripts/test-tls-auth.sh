@@ -17,23 +17,19 @@ TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 
 command -v gnutls-cli >/dev/null 2>&1 || { echo "gnutls-cli not found" >&2; exit 2; }
-command -v p11tool >/dev/null 2>&1 || { echo "p11tool not found" >&2; exit 2; }
 [ -t 0 ] || { echo "run this script interactively" >&2; exit 2; }
 
-CERT_URL=$(p11tool --list-all-certs "$TOKEN" 2>/dev/null |
-  awk '/URL:/{print $2}' |
-  grep 'object=CertAutenticacion;type=cert' | head -1)
-[ -n "$CERT_URL" ] || { echo "authentication certificate not found" >&2; exit 2; }
-
-# The DNIe names the private key Kpriv<name> while the certificate is Cert<name>.
-CERT_OBJ=$(printf '%s' "$CERT_URL" | sed -n 's/.*object=\([^;]*\);type=cert.*/\1/p')
-KEY_OBJ=${CERT_OBJ/Cert/Kpriv}
-KEY_URL=${CERT_URL/object=$CERT_OBJ/object=$KEY_OBJ}
-KEY_URL=${KEY_URL/type=cert/type=private}
-
+# Locate the certificate and its key by card ID: OpenSC exposes both with the
+# same ID. p11tool cannot always parse OpenSC's objects (GnuTLS 3.8.9 on
+# aarch64 fails with "Error in crt_list_import"), so do not depend on its
+# listings to build the RFC 7512 URLs.
 AUTH_ID=$(pkcs15-tool --list-certificates 2>/dev/null |
   awk '/CertAutenticacion/{f=1} f&&/ID *:/{print $3; exit}')
 [ -n "$AUTH_ID" ] || { echo "authentication certificate ID not found" >&2; exit 2; }
+
+CERT_URL="${TOKEN};id=%${AUTH_ID};type=cert"
+KEY_URL="${TOKEN};id=%${AUTH_ID};type=private"
+
 pkcs15-tool --read-certificate "$AUTH_ID" > "$TMP/auth.pem" 2>/dev/null
 
 # Send the intermediate as well, so the server can build the chain.

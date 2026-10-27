@@ -5,6 +5,13 @@
 **Update 2026-10-26:** the certificates were renewed and verified on the card
 (valid until 2028-10-26). Step 1 is complete; continue at step 2.
 
+**Update 2026-10-27 (ARM64 board):** T1–T6 and T10 revalidated; the Firefox
+profile was created at `~/.mozilla/dnie-profile`; the Debian package was
+upgraded to 0.2.1. A stale OpenSC cache was hiding the renewed certificates
+(see `docs/02-aarch64.md` §4); `pkcs15-tool --clear-cache` fixes it and
+`verify-card.sh` now does it automatically. T7–T9 still need the interactive
+PIN test.
+
 This is the handover document. Everything is installed and validated up to
 T6; T7–T9 only need the DNIe certificates to be renewed.
 
@@ -194,8 +201,9 @@ The private key was generated without a passphrase and lives in the local
 
 - [x] Renew the DNIe certificates in person (done 2026-10-26).
 - [x] Insert the card and confirm the new `notAfter` dates (valid until 2028-10-26).
-- [ ] Run `verify-card.sh` and `test-nss.sh`.
-- [ ] Create/refresh the Firefox profile and restart Firefox.
+- [x] Run `verify-card.sh` and `test-nss.sh` on the ARM64 board (2026-10-27).
+- [x] Create/refresh the Firefox profile (`~/.mozilla/dnie-profile`, 2026-10-27).
+- [x] T10: clean package install on the ARM64 board (`0.2.1`, 2026-10-27).
 - [x] T7: TLS client auth validated with GnuTLS/PKCS#11 (2026-10-26); Firefox UI pending.
 - [x] T8: PAdES signed on x86-64 (2026-10-26); boards pending.
 - [x] T9: covered by T8 (Autofirma uses `C_Sign` through PKCS#11).
