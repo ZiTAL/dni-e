@@ -77,6 +77,16 @@ OpenSSL 3.5 + pkcs11-provider 1.2.0 clients also fails at the TLS layer
 (empty Certificate message / invalid key handle), while the card, the PIN and
 `C_Sign` work. See `docs/02-aarch64.md` §6.
 
+Chromium 155 with the same OpenSC module **completes** client authentication
+with the DNIe when the test server is forced to TLS 1.2 and requests
+`RSA+SHA256` (PKCS#1 v1.5). The server verified the client certificate to
+`AC DNIE 004` and the page loaded. On the default TLS 1.3 server Chromium
+fails with `ERR_SSL_CLIENT_AUTH_NO_COMMON_ALGORITHMS`, because TLS 1.3
+requires RSA-PSS and the DNIe key only provides `CKM_RSA_PKCS`. Firefox
+against the same TLS 1.2 server still sends an empty Certificate message, so
+the remaining browser issue is Firefox-specific; Chromium is the working
+browser path on x86-64.
+
 The PKCS#11 test is the important one: it is exactly the path the DNIe will use
 (Autofirma → PKCS#11 module → card). It was done with SoftHSM because there is
 no reader yet; replacing SoftHSM with `libpkcs11-dnie.so` keeps the same flow.

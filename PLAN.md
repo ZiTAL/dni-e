@@ -324,6 +324,13 @@ Certificate message) and with OpenSSL 3.5 + pkcs11-provider 1.2.0 (invalid key
 handle / decrypt error); T8 fails headless on the same `pinentry` prompt. The
 card and PIN are fine; see `docs/02-aarch64.md` §6.
 
+**Result (2026-10-27, Chromium):** Chromium 155 + OpenSC completes TLS client
+authentication with the DNIe when the server uses TLS 1.2 and requests
+`RSA+SHA256` (PKCS#1 v1.5). TLS 1.3 fails with
+`ERR_SSL_CLIENT_AUTH_NO_COMMON_ALGORITHMS` because it requires RSA-PSS and the
+DNIe key only provides `CKM_RSA_PKCS`. Firefox still sends an empty certificate
+against the same TLS 1.2 server; see `docs/10-headless-browser.md` §5.3.
+
 **Golden rule:** T1–T6 and T10 do not spend PIN attempts. T7–T9 only with a
 verified PIN and valid certificates. Never automate PIN attempts: 3 failures
 block the card.

@@ -161,6 +161,11 @@ tools and in the context-specific PIN prompt. A graphical session (VNC) where
 `pinentry` can ask for the PIN is required to close T7/T8 on this board. See
 `docs/10-headless-browser.md` §5.2 for the equivalent Firefox result.
 
+Chromium on x86-64 with the same OpenSC module **does** complete the handshake
+when the server uses TLS 1.2 + `RSA+SHA256`; TLS 1.3 requires RSA-PSS and the
+DNIe key only provides `CKM_RSA_PKCS` (`docs/10-headless-browser.md` §5.3).
+That is the reference browser configuration for the DNIe.
+
 ## 7. Reproduce
 
 ```bash

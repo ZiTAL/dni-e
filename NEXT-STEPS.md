@@ -219,7 +219,8 @@ The private key was generated without a passphrase and lives in the local
 - [x] Create/refresh the Firefox profile (`~/.mozilla/dnie-profile`, 2026-10-27).
 - [x] T10: clean package install on the ARM64 board (`0.2.1`, 2026-10-27).
 - [x] T7: TLS client auth validated with GnuTLS/PKCS#11 (2026-10-26).
-- [ ] T7 (Firefox): GUI reproduces the empty-certificate failure (2026-10-27); needs an NSS/OpenSC fix or a browser workaround.
+- [ ] T7 (Firefox): GUI reproduces the empty-certificate failure (2026-10-27); needs an NSS/OpenSC fix.
+- [x] T7 (Chromium): client auth with the DNIe completed on TLS 1.2 + `RSA+SHA256` (2026-10-27); TLS 1.3 fails because it requires RSA-PSS. See `docs/10-headless-browser.md` §5.3.
 - [x] T8: PAdES signed on x86-64 (2026-10-26); boards pending.
 - [x] T9: `C_Sign` validated on x86-64 (via T8) and on the ARM64 board with
   `pkcs11-tool --test` for the authentication key (2026-10-27).

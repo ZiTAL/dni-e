@@ -124,6 +124,44 @@ an NSS/Firefox + OpenSC interaction to investigate, not a card or PIN issue.
 Use `scripts/check-pin.sh` to confirm the PIN and the private objects without
 exposing the PIN.
 
+### 5.3 Chromium works with TLS 1.2 + RSA+SHA256
+
+Chromium 155 with OpenSC in `~/.pki/nssdb` selects the DNIe authentication
+certificate and **completes** the client-authentication handshake against a
+local server when the server is forced to TLS 1.2 and requests `RSA+SHA256`
+(PKCS#1 v1.5):
+
+```bash
+openssl s_server -accept 8444 -cert srv.crt -key srv.key \
+  -Verify 1 -CAfile client-cas.pem \
+  -tls1_2 -client_sigalgs RSA+SHA256 -www
+```
+
+Server log:
+
+```
+depth=1 ... CN=AC DNIE 004
+verify error:num=2:unable to get issuer certificate
+issuer= ... CN=AC RAIZ DNIE 2
+verify return:1
+depth=0 ... CN=... (AUTENTICACIÓN)
+issuer= ... CN=AC DNIE 004
+verify return:1
+```
+
+The page loaded. The chain warning only means the server does not have
+`AC RAIZ DNIE 2`; the client certificate itself was accepted.
+
+On the default TLS 1.3 server, Chromium fails with
+`ERR_SSL_CLIENT_AUTH_NO_COMMON_ALGORITHMS`: TLS 1.3 requires RSA-PSS for RSA
+client certificates, while the DNIe/OpenSC key only provides
+`CKM_RSA_PKCS`. Forcing TLS 1.2 removes that restriction.
+
+Firefox, against the same TLS 1.2 server, still offers the certificate and PIN
+dialog but sends an empty Certificate message. The remaining problem is
+specific to Firefox/NSS + OpenSC; Chromium is the working browser path on
+x86-64.
+
 ## 6. Real T7 with Firefox and a virtual display
 
 If the browser UI is required:
