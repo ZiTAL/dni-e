@@ -4,6 +4,10 @@
 **Goal:** verify that the shim builds and loads beyond the three primary
 architectures, including musl and big-endian.
 
+**Note (v0.2.2):** these results were obtained with the v0.2.1 shim. v0.2.2
+changes only helper scripts, packaging and documentation; the shim source and
+binary are unchanged.
+
 ---
 
 ## 1. Matrix

@@ -1,6 +1,6 @@
 # Next steps after certificate renewal
 
-**Status captured:** 2026-10-25 · release `v0.2.1`
+**Status captured:** 2026-10-27 · release `v0.2.2`
 
 **Update 2026-10-26:** the certificates were renewed and verified on the card
 (valid until 2028-10-26). Step 1 is complete; continue at step 2.
@@ -36,7 +36,7 @@ T6; T7–T9 only need the DNIe certificates to be renewed.
 | Item | Value |
 |---|---|
 | Repository | https://github.com/ZiTAL/dni-e |
-| Release | https://github.com/ZiTAL/dni-e/releases/tag/v0.2.1 |
+| Release | https://github.com/ZiTAL/dni-e/releases/tag/v0.2.2 |
 | ARM64 board | Orange Pi 5, Debian 13, full stack + reader + Autofirma |
 | RISC-V board | VisionFive 2, Debian 13, full stack + Autofirma |
 | Reader | Alcor Micro AU9540 (CCID), currently on the ARM64 board |
@@ -165,7 +165,7 @@ sudo ./install.sh --system
 sudo ./install.sh --system --autofirma-jar /path/to/autofirma.jar
 
 # Debian package
-sudo dpkg -i dnie-pkcs11-compat_0.2.1_arm64.deb
+sudo dpkg -i dnie-pkcs11-compat_0.2.2_arm64.deb
 ```
 
 ## 5. Known issues and risks
@@ -181,7 +181,7 @@ sudo dpkg -i dnie-pkcs11-compat_0.2.1_arm64.deb
 
 ## 6. Release and signature
 
-`v0.2.1` assets: tarballs for aarch64, riscv64, x86-64, armv7l, ppc64le and
+`v0.2.2` assets: tarballs for aarch64, riscv64, x86-64, armv7l, ppc64le and
 s390x; Debian packages for arm64 and riscv64; `SHA256SUMS`, its signature and
 the public key.
 

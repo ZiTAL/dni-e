@@ -19,9 +19,15 @@ RISC-V 64, without depending on the official `libpkcs11-dnie.so`
 | F3 — PKCS#11 shim | ✅ x86-64, aarch64 and riscv64 |
 | F4 — Autofirma | ✅ XAdES/PAdES signing on both architectures |
 | F5 — riscv64 | ✅ T1–T6 validated with the real card |
-| F6 — DNIe 4.0 coverage | ✅ authentication and signing validated with the 4.0 card |
-| F7 — Packaging | 🟡 Arch package ready; Debian via script |
-| F8 — Validation and docs | 🟡 report and docs ready; real T1–T9 pending |
+| F6 — DNIe 4.0 coverage | ✅ `C_Sign` and authentication validated with the 4.0 card |
+| F7 — Packaging | 🟡 Arch package ready; Debian package built in CI |
+| F8 — Validation and docs | 🟡 T1–T6/T10 on both boards; T7 via Chromium with TLS 1.2; T8 pending a VNC session; Firefox client-cert issue documented |
+
+**Known limitations:** Firefox lists the DNIe certificate but sends an empty
+certificate list (NSS/OpenSC). TLS 1.3 client authentication requires RSA-PSS,
+which the DNIe key does not provide; use TLS 1.2 (Chromium:
+`--ssl-version-max=tls1.2`). Autofirma's signing key needs a context-specific
+PIN and a graphical `pinentry`, so signing on a headless board requires VNC.
 
 ## Install (any Linux, any architecture)
 
@@ -29,15 +35,15 @@ From a release tarball (no compiler needed):
 
 ```bash
 sha256sum -c SHA256SUMS --ignore-missing
-tar xzf dnie-pkcs11-compat-0.2.1-aarch64.tar.gz
-cd dnie-pkcs11-compat-0.2.1-aarch64
+tar xzf dnie-pkcs11-compat-0.2.2-aarch64.tar.gz
+cd dnie-pkcs11-compat-0.2.2-aarch64
 sudo ./install.sh --binary --system
 ```
 
 Debian/Ubuntu also have a native package:
 
 ```bash
-sudo dpkg -i dnie-pkcs11-compat_0.2.1_arm64.deb
+sudo dpkg -i dnie-pkcs11-compat_0.2.2_arm64.deb
 ```
 
 From source:
@@ -76,6 +82,20 @@ The module path is configurable:
 `DNIE_COMPAT_MODULE` > `DNIE_COMPAT_SEARCH_PATH` > `/etc/dnie-compat.conf` >
 `DNIE_COMPAT_MULTIARCH` > `make MULTIARCH=` > built-in paths and `glob`.
 See [docs/03-shim.md](docs/03-shim.md).
+
+## Browser authentication
+
+Chromium with OpenSC is the working path for DNIe TLS client authentication:
+
+```bash
+./scripts/setup-browser.sh /usr/lib/libpkcs11-dnie.so   # adds the module to NSS
+chromium --ssl-version-max=tls1.2 https://www1.agenciatributaria.gob.es
+```
+
+TLS 1.3 requires RSA-PSS for RSA client certificates, while the DNIe/OpenSC
+key only provides `CKM_RSA_PKCS`, so the connection must use TLS 1.2. Firefox
+currently lists the certificate but sends an empty list; see
+[docs/10-headless-browser.md](docs/10-headless-browser.md) §5.2–5.3.
 
 ## Quick verification
 

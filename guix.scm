@@ -16,7 +16,7 @@
 
 (package
   (name "dnie-pkcs11-compat")
-  (version "0.2.1")
+  (version "0.2.2")
   (source
    (local-file "." "dni-e-checkout"
                #:recursive? #t
@@ -25,7 +25,11 @@
                  (not (or (string-contains file "/.git")
                           (string-contains file "/reference")
                           (string-contains file "/artifacts")
-                          (string-suffix? ".so" file))))))
+                          (string-suffix? ".so" file)
+                          (string=? file "passwd")
+                          (string-suffix? ".pin" file)
+                          (string-suffix? "firmado.pdf" file)
+                          (string-suffix? ".sig0" file))))))
   (build-system gnu-build-system)
   (arguments
    (list

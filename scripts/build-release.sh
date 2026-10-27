@@ -2,13 +2,13 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # build-release.sh — build a release tarball for the current architecture.
 #
-# Usage: VERSION=0.2.1 ./scripts/build-release.sh
+# Usage: VERSION=0.2.2 ./scripts/build-release.sh
 # Output: dist/dnie-pkcs11-compat-<version>-<arch>.tar.gz (+ .sha256)
 set -euo pipefail
 
 ROOT_DIR=$(cd "$(dirname "$0")/.." && pwd)
 SHIM_DIR="$ROOT_DIR/src/pkcs11-shim"
-VERSION="${VERSION:-0.2.1}"
+VERSION="${VERSION:-0.2.2}"
 ARCH="${ARCH:-$(uname -m)}"
 CC="${CC:-cc}"
 
@@ -40,6 +40,10 @@ tar -C "$ROOT_DIR" \
   --exclude='./src/pkcs11-shim/libpkcs11-dnie.so' \
   --exclude='*.pkg.tar.zst' \
   --exclude='*.tar.gz' \
+  --exclude='./passwd' \
+  --exclude='./firmado.pdf' \
+  --exclude='./*.sig0' \
+  --exclude='*.pin' \
   -cf - . | tar -C "$staging/$name" -xf -
 
 cp "$SHIM_DIR/libpkcs11-dnie.so" "$staging/$name/prebuilt/libpkcs11-dnie.so"

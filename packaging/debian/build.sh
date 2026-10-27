@@ -31,6 +31,10 @@ tar -C "$ROOT_DIR" \
   --exclude='./src/pkcs11-shim/libpkcs11-dnie.so' \
   --exclude='*.pkg.tar.zst' \
   --exclude='*.tar.gz' \
+  --exclude='./passwd' \
+  --exclude='./firmado.pdf' \
+  --exclude='./*.sig0' \
+  --exclude='*.pin' \
   -cf - . | tar -C "$src" -xf -
 
 cp -a "$ROOT_DIR/packaging/debian" "$src/debian"
