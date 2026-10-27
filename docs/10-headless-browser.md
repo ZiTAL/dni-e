@@ -162,6 +162,18 @@ dialog but sends an empty Certificate message. The remaining problem is
 specific to Firefox/NSS + OpenSC; Chromium is the working browser path on
 x86-64.
 
+The `--ssl-version-max=tls1.2` flag was verified locally: with it Chromium
+negotiates TLS 1.2 (server log shows `write key exchange` / `write server
+done`); without it the same browser negotiates TLS 1.3 (`TLSv1.3 write
+encrypted extensions`).
+
+The AEAT endpoint `www1.agenciatributaria.gob.es:443` requests a client
+certificate and lists `AC DNIE 004`, `AC DNIE 005` and `AC DNIE 006` among its
+acceptable CAs. Chromium shows the DNIe authentication certificate for that
+site. Completing the PIN dialog in an automated session is timing-sensitive
+(the modal closes when the connection times out), so the final page must be
+confirmed in a manual run.
+
 ## 6. Real T7 with Firefox and a virtual display
 
 If the browser UI is required:
