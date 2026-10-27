@@ -30,7 +30,6 @@ AUTH_ID=$(pkcs15-tool --list-certificates 2>/dev/null |
 # RFC 7512 encodes the CKA_ID as one %XX per byte, not as a single % followed
 # by the whole hex string.
 AUTH_ID_PCT=$(printf '%s' "$AUTH_ID" | sed 's/../%&/g')
-CERT_URL="${TOKEN};id=${AUTH_ID_PCT};type=cert"
 KEY_URL="${TOKEN};id=${AUTH_ID_PCT};object=KprivAutenticacion;type=private"
 
 pkcs15-tool --read-certificate "$AUTH_ID" > "$TMP/auth.pem" 2>/dev/null
