@@ -23,3 +23,7 @@ dist/
 # Signing test output (may contain personal data)
 /firmado.pdf
 /*.sig0
+
+# Local secrets (DNIe PIN, test passwords)
+/passwd
+*.pin
