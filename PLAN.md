@@ -298,11 +298,16 @@ tests pass; no architecture-specific code.
 | T7 | TLS authentication on a site | ✅ | | | **yes** |
 | T8 | PDF signing with Autofirma | ✅ | | | **yes** |
 | T9 | Signing through PKCS#11 (`C_Sign`) | ✅ | | | **yes** |
-| T10 | Clean install from package | | | | no |
+| T10 | Clean install from package | | ✅ | | no |
 
 **Result (2026-10-26):** T7 was validated at the TLS layer with GnuTLS and
 PKCS#11; the Firefox UI client-certificate path is still under investigation.
 T8 and T9 were validated through Autofirma/PKCS#11 on x86-64.
+
+**Result (2026-10-27):** on the ARM64 board, T1–T6 and T10 pass (clean
+`dpkg` install of 0.2.1); T7–T9 still need the interactive PIN test. The board
+was showing the pre-renewal certificates from a stale OpenSC cache; see
+`docs/02-aarch64.md` §4.
 
 **Golden rule:** T1–T6 and T10 do not spend PIN attempts. T7–T9 only with a
 verified PIN and valid certificates. Never automate PIN attempts: 3 failures
