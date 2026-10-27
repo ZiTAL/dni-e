@@ -297,7 +297,7 @@ tests pass; no architecture-specific code.
 | T6 | Firefox lists the certificates | | ✅ | ✅ | no |
 | T7 | TLS authentication on a site | ✅ | | | **yes** |
 | T8 | PDF signing with Autofirma | ✅ | | | **yes** |
-| T9 | Signing through PKCS#11 (`C_Sign`) | ✅ | | | **yes** |
+| T9 | Signing through PKCS#11 (`C_Sign`) | ✅ | ✅ | | **yes** |
 | T10 | Clean install from package | | ✅ | | no |
 
 **Result (2026-10-26):** T7 was validated at the TLS layer with GnuTLS and
@@ -315,6 +315,14 @@ authentication certificate, prompts for the PIN and then sends an empty
 certificate list. Software certificates work against the same server, so T7
 remains closed at the TLS/PKCS#11 layer and the Firefox UI path is a separate
 NSS/OpenSC issue (`docs/10-headless-browser.md` §5.2).
+
+**Result (2026-10-27, ARM64 board):** T9 passes for the authentication key:
+`pkcs11-tool --test` signs with `KprivAutenticacion` (RSA-PKCS and the
+SHA1/SHA256/RIPEMD160/MD5 variants). The signing key needs a context-specific
+PIN and OpenSC's `pinentry` fails headless. T7 fails with GnuTLS 3.8.9 (empty
+Certificate message) and with OpenSSL 3.5 + pkcs11-provider 1.2.0 (invalid key
+handle / decrypt error); T8 fails headless on the same `pinentry` prompt. The
+card and PIN are fine; see `docs/02-aarch64.md` §6.
 
 **Golden rule:** T1–T6 and T10 do not spend PIN attempts. T7–T9 only with a
 verified PIN and valid certificates. Never automate PIN attempts: 3 failures

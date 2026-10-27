@@ -18,6 +18,14 @@ but after the PIN it still sends an empty certificate list. Software
 certificates in the same setup are sent and verified, so the remaining issue is
 specific to Firefox/NSS + OpenSC; see `docs/10-headless-browser.md` §5.2.
 
+**Update 2026-10-27 (ARM64 board, PIN):** T9 passes for the authentication key
+(`pkcs11-tool --test`: RSA-PKCS, SHA1/SHA256/RIPEMD160/MD5). The signing key
+needs a context-specific PIN and OpenSC's `pinentry` fails on the headless
+board. T7 fails with GnuTLS 3.8.9 (empty Certificate) and with OpenSSL 3.5 +
+pkcs11-provider 1.2.0 (invalid key handle); T8 fails headless on the same
+`pinentry` prompt. A VNC session is required to close T7/T8 on the board; see
+`docs/02-aarch64.md` §6.
+
 This is the handover document. Everything is installed and validated up to
 T6; T7–T9 only need the DNIe certificates to be renewed.
 
@@ -213,5 +221,6 @@ The private key was generated without a passphrase and lives in the local
 - [x] T7: TLS client auth validated with GnuTLS/PKCS#11 (2026-10-26).
 - [ ] T7 (Firefox): GUI reproduces the empty-certificate failure (2026-10-27); needs an NSS/OpenSC fix or a browser workaround.
 - [x] T8: PAdES signed on x86-64 (2026-10-26); boards pending.
-- [x] T9: covered by T8 (Autofirma uses `C_Sign` through PKCS#11).
+- [x] T9: `C_Sign` validated on x86-64 (via T8) and on the ARM64 board with
+  `pkcs11-tool --test` for the authentication key (2026-10-27).
 - [ ] Update `REPORT.md` and `docs/06-dnie4.md`.

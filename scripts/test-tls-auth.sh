@@ -27,8 +27,11 @@ AUTH_ID=$(pkcs15-tool --list-certificates 2>/dev/null |
   awk '/CertAutenticacion/{f=1} f&&/ID *:/{print $3; exit}')
 [ -n "$AUTH_ID" ] || { echo "authentication certificate ID not found" >&2; exit 2; }
 
-CERT_URL="${TOKEN};id=%${AUTH_ID};type=cert"
-KEY_URL="${TOKEN};id=%${AUTH_ID};type=private"
+# RFC 7512 encodes the CKA_ID as one %XX per byte, not as a single % followed
+# by the whole hex string.
+AUTH_ID_PCT=$(printf '%s' "$AUTH_ID" | sed 's/../%&/g')
+CERT_URL="${TOKEN};id=${AUTH_ID_PCT};type=cert"
+KEY_URL="${TOKEN};id=${AUTH_ID_PCT};object=KprivAutenticacion;type=private"
 
 pkcs15-tool --read-certificate "$AUTH_ID" > "$TMP/auth.pem" 2>/dev/null
 
@@ -56,10 +59,19 @@ set -e
 unset GNUTLS_PIN
 printf '%s\n' "$output"
 
+# "Successfully sent" only means GnuTLS loaded the certificate chain. Some
+# versions (3.8.9 on aarch64) still send an empty Certificate message, which
+# the server rejects with a fatal alert. Require evidence that the cert really
+# went out.
 if printf '%s' "$output" | grep -q 'Successfully sent' &&
-   printf '%s' "$output" | grep -q 'Handshake was completed'; then
+   printf '%s' "$output" | grep -q 'Handshake was completed' &&
+   ! printf '%s' "$output" | grep -q 'No certificate was sent to peer' &&
+   ! printf '%s' "$output" | grep -q 'Received alert'; then
   echo "RESULT: TLS client authentication OK"
   exit 0
 fi
 echo "RESULT: TLS client authentication FAILED (status $status)" >&2
+if printf '%s' "$output" | grep -q 'No certificate was sent to peer'; then
+  echo "  the client did not put the certificate on the wire" >&2
+fi
 exit 1

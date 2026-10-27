@@ -68,6 +68,15 @@ any EKU — is sent and verified by the same server, so the server and Firefox's
 client-auth path are sound. The failure is specific to the OpenSC/DNIe token
 path, not to the card, the PIN or the test server.
 
+On the ARM64 board the same day, T9 was validated directly on the
+authentication key: `pkcs11-tool --test` signed with `KprivAutenticacion`
+using RSA-PKCS and its SHA1/SHA256/RIPEMD160/MD5 variants. The signing key
+requires a context-specific PIN (`CKA_ALWAYS_AUTHENTICATE`) and OpenSC's
+`pinentry` cannot prompt on the headless board. T7 with the GnuTLS 3.8.9 and
+OpenSSL 3.5 + pkcs11-provider 1.2.0 clients also fails at the TLS layer
+(empty Certificate message / invalid key handle), while the card, the PIN and
+`C_Sign` work. See `docs/02-aarch64.md` §6.
+
 The PKCS#11 test is the important one: it is exactly the path the DNIe will use
 (Autofirma → PKCS#11 module → card). It was done with SoftHSM because there is
 no reader yet; replacing SoftHSM with `libpkcs11-dnie.so` keeps the same flow.

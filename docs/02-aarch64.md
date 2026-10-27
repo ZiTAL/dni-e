@@ -143,12 +143,23 @@ Java 21:
 
 Autofirma shows the real DNIe certificates once they are valid and the card responds.
 
-## 6. Missing
+## 6. T7–T9 on the headless board (2026-10-27)
 
-T1–T6 and T10 are green. T7–T9 need the interactive PIN test; the commands are
-in `NEXT-STEPS.md` §3 and `docs/10-headless-browser.md`. The board is headless
-(no local display), so the TLS layer is tested with `scripts/test-tls-auth.sh`
-and Firefox's UI would need Xvfb + VNC.
+T1–T6 and T10 are green. The PIN was verified with
+`pkcs15-tool --verify-pin` and `pkcs11-tool --login`; the card is not blocked.
+
+| Test | Result |
+|---|---|
+| T9 — `C_Sign`, authentication key | ✅ `pkcs11-tool --test` signs with `KprivAutenticacion`: RSA-PKCS, SHA1/SHA256/RIPEMD160/MD5-RSA-PKCS |
+| T9 — `C_Sign`, signing key | ❌ requires a context-specific PIN (`CKA_ALWAYS_AUTHENTICATE`); OpenSC invokes `pinentry` and fails headless with `pinentry-curses: Assuan processing failed: Broken pipe` |
+| T7 — TLS with GnuTLS 3.8.9 | ❌ prints “Successfully sent 2 certificate(s)” but sends an empty Certificate message; the server logs `peer did not return a certificate` |
+| T7 — TLS with OpenSSL 3.5 + pkcs11-provider 1.2.0 | ❌ `The specified key handle is not valid` on TLS 1.2 (`RSA+SHA256`), `internal_error`/`decrypt_error` on TLS 1.3 |
+| T8 — Autofirma | ❌ headless: `java.awt.HeadlessException`; under `xvfb-run` it reaches the signing key and fails at the same pinentry prompt |
+
+The card, the PIN and `C_Sign` are fine: the failures are in the headless TLS
+tools and in the context-specific PIN prompt. A graphical session (VNC) where
+`pinentry` can ask for the PIN is required to close T7/T8 on this board. See
+`docs/10-headless-browser.md` §5.2 for the equivalent Firefox result.
 
 ## 7. Reproduce
 
