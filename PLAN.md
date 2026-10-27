@@ -309,6 +309,13 @@ T8 and T9 were validated through Autofirma/PKCS#11 on x86-64.
 was showing the pre-renewal certificates from a stale OpenSC cache; see
 `docs/02-aarch64.md` §4.
 
+**Result (2026-10-27, Firefox GUI):** with the correct PIN (verified with
+`pkcs15-tool --verify-pin` and `pkcs11-tool --login`), Firefox lists the DNIe
+authentication certificate, prompts for the PIN and then sends an empty
+certificate list. Software certificates work against the same server, so T7
+remains closed at the TLS/PKCS#11 layer and the Firefox UI path is a separate
+NSS/OpenSC issue (`docs/10-headless-browser.md` §5.2).
+
 **Golden rule:** T1–T6 and T10 do not spend PIN attempts. T7–T9 only with a
 verified PIN and valid certificates. Never automate PIN attempts: 3 failures
 block the card.

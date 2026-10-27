@@ -99,10 +99,30 @@ RESULT: TLS client authentication OK
 The local server's chain warning is only because it lacks the root
 `AC RAIZ DNIE 2`; the client authentication itself is valid.
 
-Firefox's certificate manager lists the DNIe certificates, but its client-auth
-path did not send them in our tests. That remains a browser-side issue, not a
-card issue. Use `scripts/check-pin.sh` to confirm the PIN and the private
-objects without exposing the PIN.
+### 5.2 Verified: Firefox GUI still sends an empty certificate list
+
+On 2026-10-27 the flow was repeated in a graphical session (Firefox 158, the
+real card and the correct PIN):
+
+1. Firefox opens its certificate chooser and lists
+   `BILBAO BARTUREN, IBAN (AUTENTICACIÓN)` from `DNI electrónico`.
+2. The DNIe PIN dialog appears. The PIN was verified independently with
+   `pkcs15-tool --verify-pin` and `pkcs11-tool --login`, so it is correct.
+3. After the PIN is accepted, Firefox sends an **empty** certificate list; the
+   server logs `peer did not return a certificate`.
+
+Control test: software certificates imported into the same profile — one with
+`extendedKeyUsage=clientAuth` and one without EKU — are sent and verified by
+the same server (`depth=0 CN=test-client`, `verify return:1`). So the test
+server, the CA trust and Firefox's client-auth path are sound; the failure is
+specific to the OpenSC/DNIe token.
+
+The PKCS#11 objects look consistent: the private key `KprivAutenticacion` and
+the certificate `CertAutenticacion` share the same CKA_ID, the key only has
+sign/signRecover usage, and no `always authenticate` flag is reported. This is
+an NSS/Firefox + OpenSC interaction to investigate, not a card or PIN issue.
+Use `scripts/check-pin.sh` to confirm the PIN and the private objects without
+exposing the PIN.
 
 ## 6. Real T7 with Firefox and a virtual display
 

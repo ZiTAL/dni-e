@@ -12,6 +12,12 @@ upgraded to 0.2.1. A stale OpenSC cache was hiding the renewed certificates
 `verify-card.sh` now does it automatically. T7–T9 still need the interactive
 PIN test.
 
+**Update 2026-10-27 (x86-64, GUI):** the PIN is confirmed correct and the card
+logs in. Firefox shows the DNIe authentication certificate and asks for the PIN,
+but after the PIN it still sends an empty certificate list. Software
+certificates in the same setup are sent and verified, so the remaining issue is
+specific to Firefox/NSS + OpenSC; see `docs/10-headless-browser.md` §5.2.
+
 This is the handover document. Everything is installed and validated up to
 T6; T7–T9 only need the DNIe certificates to be renewed.
 
@@ -204,7 +210,8 @@ The private key was generated without a passphrase and lives in the local
 - [x] Run `verify-card.sh` and `test-nss.sh` on the ARM64 board (2026-10-27).
 - [x] Create/refresh the Firefox profile (`~/.mozilla/dnie-profile`, 2026-10-27).
 - [x] T10: clean package install on the ARM64 board (`0.2.1`, 2026-10-27).
-- [x] T7: TLS client auth validated with GnuTLS/PKCS#11 (2026-10-26); Firefox UI pending.
+- [x] T7: TLS client auth validated with GnuTLS/PKCS#11 (2026-10-26).
+- [ ] T7 (Firefox): GUI reproduces the empty-certificate failure (2026-10-27); needs an NSS/OpenSC fix or a browser workaround.
 - [x] T8: PAdES signed on x86-64 (2026-10-26); boards pending.
 - [x] T9: covered by T8 (Autofirma uses `C_Sign` through PKCS#11).
 - [ ] Update `REPORT.md` and `docs/06-dnie4.md`.

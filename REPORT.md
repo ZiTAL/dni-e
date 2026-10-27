@@ -57,6 +57,17 @@ the client sent both certificates and the handshake completed
 the DNIe correctly, but its client-auth path did not send the certificate in
 our tests; that remains a browser-side issue.
 
+On 2026-10-27 the Firefox path was reproduced in a graphical session with the
+renewed card and the correct PIN (verified independently with
+`pkcs15-tool --verify-pin` and `pkcs11-tool --login`): Firefox shows the DNIe
+authentication certificate in its certificate chooser and prompts for the
+device PIN, but after the PIN is accepted it sends an **empty** certificate
+list (server: `peer did not return a certificate`). A control test with local
+software certificates — one with `extendedKeyUsage=clientAuth` and one without
+any EKU — is sent and verified by the same server, so the server and Firefox's
+client-auth path are sound. The failure is specific to the OpenSC/DNIe token
+path, not to the card, the PIN or the test server.
+
 The PKCS#11 test is the important one: it is exactly the path the DNIe will use
 (Autofirma → PKCS#11 module → card). It was done with SoftHSM because there is
 no reader yet; replacing SoftHSM with `libpkcs11-dnie.so` keeps the same flow.

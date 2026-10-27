@@ -75,6 +75,14 @@ It serves as an executable reference if OpenSC fails on any operation.
 - **Residual risk:** low, but it cannot be closed without testing login and
   signing with valid certificates.
 
+### 5.1 PIN metadata caveat
+
+OpenSC reports PIN1 as `stored_len: 8` and `Type: ascii-numeric`, but on the
+test card the valid PIN is **alphanumeric and longer than 8 characters**. Do not
+reject a PIN because it does not fit that metadata: the authoritative value is
+the one in the DNIe letter. `scripts/check-pin.sh` reads it from the terminal
+and verifies it against the card.
+
 ## 6. Criteria to close F6
 
 | Test | Status |
