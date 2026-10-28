@@ -281,7 +281,7 @@ The private key was generated without a passphrase and lives in the local
 - [x] Run `verify-card.sh` and `test-nss.sh` on the ARM64 board (2026-10-27).
 - [x] Create/refresh the Firefox profile (`~/.mozilla/dnie-profile`, 2026-10-27).
 - [x] T10: clean package install on the ARM64 board (0.2.1, 2026-10-27) and
-  on riscv64 (0.2.2 CI-built `.deb`, 2026-10-28).
+  on riscv64 (0.2.3 published `.deb`, 2026-10-28).
 - [x] T7: TLS client auth validated with GnuTLS/PKCS#11 (2026-10-26).
 - [x] T7 (Firefox): client auth validated on x86-64 under Xvfb (automatic and
   chooser, OpenSC and shim, AEAT TLS 1.2); see `docs/10-headless-browser.md`

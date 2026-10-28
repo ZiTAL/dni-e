@@ -19,7 +19,7 @@ authentication, PAdES signing and `C_Sign` with the signing key.
 | `p11-kit` | 0.25.5-3 |
 | `openjdk-21-jre` | 21.0.12.1 |
 | `libnss3-tools`, `xvfb`, `xauth` | (for Autofirma and tests) |
-| `dnie-pkcs11-compat` | 0.2.2 (2026-10-28) |
+| `dnie-pkcs11-compat` | 0.2.3 (2026-10-28) |
 
 Service: `pcscd.socket` and `pcscd.service` **active**.
 
@@ -33,18 +33,17 @@ OpenSC module on Debian: `/usr/lib/aarch64-linux-gnu/opensc-pkcs11.so`.
 ```
 
 **Update 2026-10-28:** the board had `dnie-pkcs11-compat` 0.2.1 from a source
-build. It was upgraded with the signed `dnie-pkcs11-compat_0.2.2_arm64.deb`
-(`dpkg -i`), which keeps the package metadata consistent:
+build. It was upgraded first to the signed 0.2.2 `.deb` and then to the
+published `v0.2.3` package:
 
 ```text
-package dnie-pkcs11-compat 0.2.2
-sha256  6fa4d7c221b60e246bff668c443157e755da2e8d54da3675856acf7ca24fba1b
+package dnie-pkcs11-compat 0.2.3 (dpkg -V clean)
+sha256  a8aaa9086481e8016b11d0c5d2e04b16df21d07d0f458f16ff190b7bbb5bfe0c
 backup  /usr/lib/libpkcs11-dnie.so.0.2.1.bak
 ```
 
-`dpkg -V dnie-pkcs11-compat` is clean. After the upgrade, T9 signs with the
-signing key (signature verified) and T8 signs PAdES with Autofirma (`openssl
-cms` verification successful).
+After the 0.2.3 upgrade, T9 signs with the signing key (signature verified)
+and T8 signs PAdES with Autofirma (`openssl cms` verification successful).
 
 ## 3. polkit: required on headless / SSH access
 
