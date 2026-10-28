@@ -4,8 +4,8 @@
 **Phase:** F6
 **Status:** 🟢 the contact interface is covered: PIN login, `C_Sign` and TLS
 client authentication work with the renewed 4.0 card (valid until 2028-10-26)
-in GnuTLS, Chromium and Firefox, and Autofirma signs PAdES on x86-64 and
-ARM64.
+in GnuTLS, Chromium and Firefox, and Autofirma signs PAdES on x86-64, aarch64
+and riscv64.
 
 ---
 

@@ -4,8 +4,8 @@
 **Scope:** deploy and validate the DNIe stack on an ARM64 host (Orange Pi 5) and a RISC-V host (VisionFive 2).
 **Outcome:** both machines have the full stack installed and validated. The
 certificates were renewed on 2026-10-26 (valid until 2028-10-26). T7 is closed
-with GnuTLS, Chromium (TLS 1.2) and Firefox; T8 and T9 are closed on x86-64 and
-on the ARM64 board, including `C_Sign` with the signing key and PAdES with
+with GnuTLS, Chromium (TLS 1.2) and Firefox; T8 and T9 are closed on x86-64,
+aarch64 and riscv64, including `C_Sign` with the signing key and PAdES with
 Autofirma. TLS 1.3 and servers that do not advertise the DNIe CA remain the
 documented limitations; see [NEXT-STEPS.md](NEXT-STEPS.md).
 
@@ -81,13 +81,23 @@ PIN and `C_Sign` work. See `docs/02-aarch64.md` §6.
 On 2026-10-28 the board completed T9 with the **signing** key
 (`SHA256-RSA-PKCS`, 256-byte signature verified against the FIRMA
 certificate) and T8 with Autofirma (PAdES signed through the shim and OpenSC;
-`pdfsig` reports *Signature is Valid*). The apparent headless PIN failure was
+`pdfsig` 25.03 on the board reports *Signature is Valid*, while 26.08 reports a
+false negative; `openssl cms` verifies it). The apparent headless PIN failure was
 OpenSC's DNIe **user-consent** prompt (`dnie_ask_user_consent` → pinentry
 `CONFIRM`), which returns `Not allowed` without a console and surfaces as
 `CKR_FUNCTION_FAILED`. A dedicated `OPENSC_CONF` with
 `user_consent_enabled = false` skips that confirmation; the card PIN is still
 required. `-store dni` (jmulticard) fails headless with `NoConsoleException`;
 the PKCS#11 store is the working path. See `docs/02-aarch64.md` §6.1.
+
+The reader and card were then moved to the RISC-V board and the card tests
+repeated there on 2026-10-28: T9 signs with the signing key (signature
+verified), T8 signs PAdES with Autofirma (`openssl cms` verifies the
+signature), and T7 completes TLS client authentication with GnuTLS 3.8.9. The
+local server received the 0e1c-byte client certificate and returned 200;
+against AEAT the handshake completes and the site returns its own 403. The
+stale OpenSC cache listed the old 2022 certificate IDs until
+`pkcs15-tool --clear-cache`. See `docs/05-riscv64.md` §7.
 
 Chromium 155 with the same OpenSC module **completes** client authentication
 with the DNIe when the test server is forced to TLS 1.2 and requests
@@ -183,7 +193,7 @@ closed on x86-64 and on the ARM64 board.
 |---|---|---|
 | TLS 1.3 | RSA-PSS is required and the key only provides `CKM_RSA_PKCS` | Documented limitation; use TLS 1.2 |
 | Servers without the DNIe CA | If the acceptable CA list lacks `AC DNIE 004`, Firefox sends an empty certificate and asks for no PIN | Use a CA list with the DNIe issuer; see `docs/10-headless-browser.md` §5.2 |
-| riscv64 card tests | The reader and card were on the ARM64 board; T7–T9 were not repeated on VisionFive 2 | Repeat the board procedure when the reader is available (`docs/02-aarch64.md` §6) |
+| `pdfsig` 26.08 | Reports "Signature is Invalid" for the valid DNIe PAdES files | Verify with `openssl cms`; see `docs/04-autofirma.md` §4.1 |
 
 ---
 
@@ -241,7 +251,6 @@ Then:
 
 ## Handover
 
-The stack is complete up to T6 on both boards, and T7–T9 are closed on x86-64
-and on the ARM64 board. Remaining work: repeat the card tests on riscv64 when
-the reader is available. See [NEXT-STEPS.md](NEXT-STEPS.md) for the checklist,
+The stack is complete up to T6 on both boards, and T7–T9 are closed on x86-64,
+aarch64 and riscv64. See [NEXT-STEPS.md](NEXT-STEPS.md) for the checklist,
 commands and known risks.

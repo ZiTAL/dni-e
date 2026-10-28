@@ -1,9 +1,9 @@
 # 05 — riscv64 (VisionFive 2)
 
 **Host:** RISC-V board · StarFive VisionFive 2 · Debian 13 (trixie) · kernel 6.6.20
-**Date:** 2026-10-24
-**Status:** ✅ stack and reader validated (T1–T6); T7–T9 not repeated on this
-board (the reader/card were on the ARM64 board)
+**Date:** 2026-10-24, updated 2026-10-28
+**Status:** ✅ T1–T10 validated on the board, including TLS client auth
+(GnuTLS), `C_Sign` with the signing key and PAdES with Autofirma
 
 ---
 
@@ -96,9 +96,32 @@ Deployed in `~/autofirma` with the launcher adapted to Java 25.
 | aarch64 | ✅ 21/21 |
 | riscv64 | ✅ 21/21 |
 
-## 7. Missing
+## 7. T7–T9 on the board (2026-10-28)
 
-None for T1–T6. T7–T9 were validated on x86-64 and on the ARM64 board; repeat
-them here when the reader and card are available (the procedure is in
-`docs/02-aarch64.md` §6). TLS 1.3 client authentication is not possible because
-the key only offers `CKM_RSA_PKCS`.
+The reader and card were moved here and the card tests repeated with OpenSC
+0.26.1 and the installed shim.
+
+| Test | Result |
+|---|---|
+| T9 — `C_Sign`, signing key | ✅ `SHA256-RSA-PKCS` with `KprivFirmaDigital`, 256-byte signature, `Verified OK` against the FIRMA certificate |
+| T8 — Autofirma PAdES | ✅ `-store pkcs11:… -alias CertFirmaDigital`; `openssl cms` verifies the signature (see below) |
+| T7 — TLS with GnuTLS 3.8.9 | ✅ local TLS 1.2 server that advertises `AC DNIE 004`: the server received the 0e1c-byte client certificate (`depth=0 … AUTENTICACIÓN`) and returned 200; also completes against AEAT (the site returns its own 403) |
+
+The stale OpenSC cache affected this board too: after the 2026-10-26 renewal
+`pkcs15-tool` still listed the old 2022 IDs until `pkcs15-tool --clear-cache`.
+Run it after any renewal.
+
+Signing with the signing key needs the DNIe user-consent prompt disabled for
+unattended use (it returns `Not allowed` headless); the PIN is still required.
+The procedure and the `user_consent_enabled = false` config are in
+`docs/02-aarch64.md` §6.1.
+
+### 7.1 pdfsig 26.08 reports a false negative
+
+The signed PDFs from both boards verify with `openssl cms` (with and without
+the AC DNIE 004 chain). `pdfsig` 25.03 on the ARM64 board reported *Signature
+is Valid*; `pdfsig` 26.08 reports *Signature is Invalid* for the same files.
+Do not use recent pdfsig versions as the only check.
+
+TLS 1.3 client authentication is not possible because the key only offers
+`CKM_RSA_PKCS`.

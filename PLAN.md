@@ -295,9 +295,9 @@ tests pass; no architecture-specific code.
 | T4 | `pkcs15-tool --list-certificates` (3 certs) | ✅ | ✅ | ✅ | no |
 | T5 | `pkcs11-tool -L/-O` through the shim | ✅ | ✅ | ✅ | no |
 | T6 | Firefox lists the certificates | | ✅ | ✅ | no |
-| T7 | TLS authentication on a site | ✅ | ⚠️ | | **yes** |
-| T8 | PDF signing with Autofirma | ✅ | ✅ | | **yes** |
-| T9 | Signing through PKCS#11 (`C_Sign`) | ✅ | ✅ | | **yes** |
+| T7 | TLS authentication on a site | ✅ | ⚠️ | ✅ | **yes** |
+| T8 | PDF signing with Autofirma | ✅ | ✅ | ✅ | **yes** |
+| T9 | Signing through PKCS#11 (`C_Sign`) | ✅ | ✅ | ✅ | **yes** |
 | T10 | Clean install from package | | ✅ | | no |
 
 **Result (2026-10-26):** T7 was validated at the TLS layer with GnuTLS and
@@ -315,6 +315,15 @@ headless blocker was OpenSC's DNIe user-consent prompt, not the PIN; a
 dedicated config with `user_consent_enabled = false` removes it. See
 `docs/02-aarch64.md` §6.1. T7 on the board still fails in GnuTLS/OpenSSL; the
 server's acceptable CA list must include `AC DNIE 004`.
+
+**Result (2026-10-28, riscv64 board):** with the reader and card moved to the
+VisionFive 2, T9 signs with the signing key (signature verified), T8 signs
+PAdES with Autofirma (`openssl cms` verifies the signature), and T7 completes
+client authentication with GnuTLS: the local server received the 0e1c-byte
+client certificate and returned 200, and AEAT completes the handshake (the site
+returns its own 403). The stale OpenSC cache had to be cleared first.
+`pdfsig` 26.08 reports a false negative on these PAdES files. See
+`docs/05-riscv64.md` §7.
 
 **Result (2026-10-27, Firefox GUI):** with the correct PIN (verified with
 `pkcs15-tool --verify-pin` and `pkcs11-tool --login`), Firefox listed the DNIe
@@ -502,8 +511,7 @@ dni-e/
 ## 13. Definition of Done
 
 - [ ] T1–T6 and T10 green on aarch64 and riscv64.
-- [x] T7–T9 green with valid certificates on x86-64 and aarch64.
-- [ ] T7–T9 repeated on riscv64 with the reader.
+- [x] T7–T9 green with valid certificates on x86-64, aarch64 and riscv64.
 - [ ] Installable and reproducible packages on both architectures.
 - [ ] The shim does not break existing x86-64 installations.
 - [ ] Documentation sufficient for a third party to repeat it.

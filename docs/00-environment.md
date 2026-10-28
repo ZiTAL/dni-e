@@ -65,8 +65,8 @@ false negatives.
 | `CertCAIntermediaDGP` | 2014-06-13 | 2029-06-13 | ✅ valid |
 
 **Consequence:** T1–T6 are validated. With the renewed certificates T7 was
-closed with GnuTLS, Chromium and Firefox on TLS 1.2, and T8/T9 on x86-64 and on
-the ARM64 board.
+closed with GnuTLS, Chromium and Firefox on TLS 1.2, and T8/T9 on x86-64,
+aarch64 and riscv64.
 
 ## 4. Services and configuration
 
@@ -94,6 +94,6 @@ pcscd.socket   enabled + active
 ## 6. Follow-up items
 
 - Define the aarch64 and riscv64 boards (done: Orange Pi 5 and VisionFive 2).
-- Renew certificates to close T7–T9 (done 2026-10-26; all closed on x86-64 and
-  aarch64; riscv64 pending the reader).
+- Renew certificates to close T7–T9 (done 2026-10-26; all closed on x86-64,
+  aarch64 and riscv64).
 - Obtain (optional) a DNIe 3.0 for cross-testing with DNIe 4.0.

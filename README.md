@@ -21,7 +21,7 @@ RISC-V 64, without depending on the official `libpkcs11-dnie.so`
 | F5 — riscv64 | ✅ T1–T6 validated with the real card |
 | F6 — DNIe 4.0 coverage | ✅ `C_Sign` and authentication validated with the 4.0 card |
 | F7 — Packaging | 🟡 Arch package ready; Debian package built in CI |
-| F8 — Validation and docs | 🟡 T1–T6/T10 on both boards; T7–T9 on x86-64 and aarch64 (GnuTLS, Chromium, Firefox, Autofirma) |
+| F8 — Validation and docs | 🟡 T1–T6/T10 on both boards; T7–T9 on x86-64, aarch64 and riscv64 |
 
 **Known limitations:** TLS 1.3 client authentication requires RSA-PSS, which
 the DNIe key does not provide; use TLS 1.2 (Chromium:

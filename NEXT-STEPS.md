@@ -48,9 +48,15 @@ returns `Not allowed` without a console. Use a dedicated `OPENSC_CONF` with
 (jmulticard) still needs a console; use `-store pkcs11:…`. See
 `docs/02-aarch64.md` §6.1.
 
+**Update 2026-10-28 (riscv64 board):** with the reader and card on the
+VisionFive 2, T9 signs with the signing key (signature verified), T8 signs
+PAdES with Autofirma (`openssl cms` verifies it), and T7 completes TLS client
+authentication with GnuTLS against AEAT. Clear the OpenSC cache after the
+renewal (`pkcs15-tool --clear-cache`); the board was listing the 2022 IDs. See
+`docs/05-riscv64.md` §7.
+
 This is the handover document. The stack is installed and validated up to T6 on
-both boards; T7–T9 are closed on x86-64 and the ARM64 board. The only pending
-card tests are on riscv64, when the reader is available.
+both boards; T7–T9 are closed on x86-64, aarch64 and riscv64.
 
 ---
 
@@ -73,9 +79,9 @@ aarch64 and riscv64. See `REPORT.md` and `docs/`.
 
 | Test | State |
 |---|---|
-| T7 — TLS authentication on a site | ✅ GnuTLS/PKCS#11, Chromium and Firefox on TLS 1.2. Firefox needs the server to advertise the DNIe issuer in its CA list |
-| T8 — PDF signing with Autofirma | ✅ x86-64 (2026-10-26) and ARM64 (2026-10-28, `-store pkcs11:…`, PAdES valid) |
-| T9 — `C_Sign` through PKCS#11 | ✅ x86-64 (via T8), ARM64 authentication key, and ARM64 signing key (2026-10-28) |
+| T7 — TLS authentication on a site | ✅ GnuTLS/PKCS#11, Chromium and Firefox on TLS 1.2, including GnuTLS on riscv64. Firefox needs the server to advertise the DNIe issuer in its CA list |
+| T8 — PDF signing with Autofirma | ✅ x86-64 (2026-10-26), ARM64 and riscv64 (2026-10-28, `-store pkcs11:…`, signature verified) |
+| T9 — `C_Sign` through PKCS#11 | ✅ x86-64 (via T8), ARM64 and riscv64 authentication and signing keys (2026-10-28) |
 
 The PIN is **not** changed by renewal. It is the one in the DNIe letter.
 **Three wrong attempts block the card.**
@@ -226,6 +232,8 @@ sudo dpkg -i dnie-pkcs11-compat_0.2.2_arm64.deb
 | Issue | Action |
 |---|---|
 | Reader re-enumerates (`LIBUSB_ERROR_IO`) | Reset the USB port and restart `pcscd` (see `docs/02-aarch64.md`) |
+| Old certificate IDs after renewal | `pkcs15-tool --clear-cache` (OpenSC does not invalidate its cache) |
+| `pdfsig` 26.08 says "Signature is Invalid" | False negative; verify with `openssl cms` (`docs/04-autofirma.md` §4.1) |
 | Firefox profile has no module | Run `make-firefox-profile.sh` or `setup-browser.sh` after the first launch |
 | Headless browser asks for the PIN | Not scriptable with a supported API; use `openssl s_client` with PKCS#11, or Xvfb + VNC/XTEST |
 | Autofirma shows no certificates | Autofirma not restarted, or the reader is unresponsive |
@@ -278,10 +286,8 @@ The private key was generated without a passphrase and lives in the local
   §5.2. The 2026-10-27 empty list is reproducible only when the server's CA
   list lacks `AC DNIE 004`.
 - [x] T7 (Chromium): client auth with the DNIe completed on TLS 1.2 + `RSA+SHA256` (2026-10-27); TLS 1.3 fails because it requires RSA-PSS. See `docs/10-headless-browser.md` §5.3.
-- [x] T8: PAdES signed on x86-64 (2026-10-26) and on the ARM64 board
-  (2026-10-28, `-store pkcs11:…`, `pdfsig` valid).
-- [x] T9: `C_Sign` validated on x86-64 (via T8), on the ARM64 board with
-  `pkcs11-tool --test` for the authentication key, and on the ARM64 board with
-  the signing key (2026-10-28, signature verified).
+- [x] T8: PAdES signed on x86-64 (2026-10-26), ARM64 and riscv64
+  (2026-10-28, `-store pkcs11:…`; `openssl cms` verifies it).
+- [x] T9: `C_Sign` validated on x86-64 (via T8), and on ARM64 and riscv64 with
+  the authentication and signing keys (2026-10-28, signatures verified).
 - [x] Update `REPORT.md` and `docs/06-dnie4.md` (2026-10-28).
-- [ ] Repeat the card tests on riscv64 when the reader is available.

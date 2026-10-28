@@ -3,7 +3,7 @@
 **Date:** 2026-10-24
 **Phase:** F4
 **Status:** ✅ no port needed (`any` package); PAdES with the DNIe validated on
-x86-64 and on the ARM64 board (`-store pkcs11:…`)
+x86-64, aarch64 and riscv64 (`-store pkcs11:…`)
 
 ---
 
@@ -87,6 +87,11 @@ openssl cms -verify -binary -inform DER -in signature.cms   -content signed-cont
 
 Autofirma and Adobe accept these signatures. Do not treat the poppler message
 as proof of a broken signature.
+
+Version matters: the PAdES files produced on 2026-10-28 verify with `openssl
+cms`, but `pdfsig` 25.03 (Debian 13 on the ARM64 board) calls them valid while
+`pdfsig` 26.08 calls the same files invalid. Use `openssl cms` as the
+authoritative check.
 
 ## 5. Debian note
 
