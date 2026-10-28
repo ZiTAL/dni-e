@@ -1,6 +1,6 @@
 # 10 — Headless browsers and the DNIe PIN
 
-**Date:** 2026-10-25
+**Date:** 2026-10-25, updated 2026-10-28
 **Goal:** use Firefox/Chromium without a graphical session and understand exactly
 what can and cannot be automated with the DNIe.
 
@@ -212,8 +212,10 @@ Three wrong PIN attempts block the card. Do not use these commands to guess.
 
 ## 8. Caveats
 
-- Certificates were renewed on 2026-10-26 (valid until 2028-10-26); T7–T9
-  are now pending only the PIN tests.
+- Certificates were renewed on 2026-10-26 (valid until 2028-10-26). T7 is
+  closed at the TLS layer with GnuTLS and Chromium (TLS 1.2), and T8/T9 on
+  x86-64; the Firefox empty-certificate issue and the boards' signing PIN
+  prompt are still open.
 - Playwright's bundled Firefox is not available for every architecture; the
   tests use the system Chromium through `executablePath`.
 - On riscv64 there is no usable Chromium package in Debian trixie; Firefox

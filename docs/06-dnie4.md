@@ -1,8 +1,11 @@
 # 06 — DNIe 4.0 coverage in OpenSC
 
-**Date:** 2026-10-24
-**Phase:** F6 (preliminary analysis)
-**Status:** 🟡 the driver accepts the 4.0 ATR and has the required operations; certificates valid since 2026-10-26, PIN/signing test pending
+**Date:** 2026-10-24, updated 2026-10-28
+**Phase:** F6
+**Status:** 🟢 the contact interface is covered: PIN login, `C_Sign` and TLS
+client authentication work with the renewed 4.0 card (valid until 2028-10-26).
+The only open item is Firefox's empty client-certificate list, which is an
+NSS/OpenSC issue rather than a driver gap.
 
 ---
 
@@ -68,12 +71,16 @@ It serves as an executable reference if OpenSC fails on any operation.
 
 ## 5. Conclusion
 
-- **Contact interface:** full coverage is expected; the driver is ready for the
-  4.0 ATR.
+- **Contact interface:** covered. Login, signing and TLS client authentication
+  work with the 4.0 card and OpenSC 0.26.1; no driver patch was needed.
 - **NFC/PACE:** out of scope for this project (requires a contactless reader and
   is not needed for desktop authentication or signing).
-- **Residual risk:** low, but it cannot be closed without testing login and
-  signing with valid certificates.
+- **TLS algorithms:** the key only provides `CKM_RSA_PKCS`. TLS 1.2 with
+  `RSA+SHA256` works; TLS 1.3 requires RSA-PSS and fails with
+  `ERR_SSL_CLIENT_AUTH_NO_COMMON_ALGORITHMS`.
+- **Firefox:** NSS lists the certificate and asks for the PIN, then sends an
+  empty Certificate message. Chromium against the same server works, so this is
+  an NSS/OpenSC interaction, not a card or PIN problem.
 
 ### 5.1 PIN metadata caveat
 
@@ -83,6 +90,21 @@ reject a PIN because it does not fit that metadata: the authoritative value is
 the one in the DNIe letter. `scripts/check-pin.sh` reads it from the terminal
 and verifies it against the card.
 
+### 5.2 TLS client authentication with the 4.0 card
+
+| Client | Result |
+|---|---|
+| GnuTLS 3.8.9 + PKCS#11 (`scripts/test-tls-auth.sh`) | ✅ sends both certificates, handshake completes (x86-64, 2026-10-26) |
+| Chromium 155 + OpenSC, TLS 1.2 + `RSA+SHA256` | ✅ handshake completes, server verifies to `AC DNIE 004` (x86-64, 2026-10-27) |
+| Chromium 155 + OpenSC, TLS 1.3 | ❌ `ERR_SSL_CLIENT_AUTH_NO_COMMON_ALGORITHMS` (needs RSA-PSS) |
+| Firefox 158 + OpenSC, TLS 1.2 | ❌ empty Certificate message after a correct PIN |
+
+The signing key (`KprivFirmaDigital`) is flagged `CKA_ALWAYS_AUTHENTICATE`, so
+OpenSC opens a `pinentry` dialog for the signing operation. On a headless board
+that dialog cannot be answered; use Xvfb + VNC. The authentication key signs
+without a second prompt: `pkcs11-tool --test` passes on the ARM64 board.
+See `docs/10-headless-browser.md` §5.2–5.3 and `docs/02-aarch64.md` §6.
+
 ## 6. Criteria to close F6
 
 | Test | Status |
@@ -90,8 +112,11 @@ and verifies it against the card.
 | `opensc-tool -n` = dnie | ✅ |
 | Certificate listing | ✅ |
 | PIN login | ✅ (2026-10-26) |
-| PKCS#11 signing (`C_Sign`) | ✅ (T8 via Autofirma) |
-| Autofirma with the same PIN | ✅ (x86-64, 2026-10-26) |
+| PKCS#11 signing (`C_Sign`), authentication key | ✅ ARM64 board, RSA-PKCS + SHA1/SHA256/RIPEMD160/MD5 (2026-10-27) |
+| PKCS#11 signing (`C_Sign`), signing key | ✅ via Autofirma on x86-64 (2026-10-26); boards need VNC |
+| Autofirma with the same PIN | ✅ x86-64 (2026-10-26); boards need VNC |
+| TLS client authentication | ✅ GnuTLS and Chromium on TLS 1.2; ❌ Firefox |
 
-If any fails, the order of action is: APDU trace → compare with `jmulticard` →
-patch `card-dnie.c` → upstream.
+F6 is closed for the contact interface. If an operation regresses, the order of
+action is: APDU trace → compare with `jmulticard` → patch `card-dnie.c` →
+upstream. The outstanding browser item is tracked separately as an NSS issue.

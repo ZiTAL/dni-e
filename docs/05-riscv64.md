@@ -2,7 +2,8 @@
 
 **Host:** RISC-V board · StarFive VisionFive 2 · Debian 13 (trixie) · kernel 6.6.20
 **Date:** 2026-10-24
-**Status:** ✅ stack and reader validated (T1–T6); signing pending certificate renewal
+**Status:** ✅ stack and reader validated (T1–T6); T7–T9 pending a VNC session
+on this board
 
 ---
 
@@ -97,5 +98,7 @@ Deployed in `~/autofirma` with the launcher adapted to Java 25.
 
 ## 7. Missing
 
-None for T1–T6. The certificates were renewed on 2026-10-26; T7–T9 are pending
-the PIN tests.
+None for T1–T6. The certificates were renewed on 2026-10-26. T7–T9 still need a
+graphical session for the PIN (Xvfb + VNC, see
+`docs/10-headless-browser.md` §6); TLS 1.3 client authentication is not possible
+because the key only offers `CKM_RSA_PKCS`.

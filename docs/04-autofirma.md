@@ -2,7 +2,8 @@
 
 **Date:** 2026-10-24
 **Phase:** F4
-**Status:** ✅ no port needed (`any` package); hardware validation pending
+**Status:** ✅ no port needed (`any` package); signing validated on x86-64, the
+boards still need a graphical PIN prompt (VNC)
 
 ---
 
@@ -70,7 +71,8 @@ Requirement on the target: `jdk17-openjdk` (provides `java-runtime=17`).
 | PDF signing on x86-64 | ✅ PAdES signed with the DNIe; CMS verified (2026-10-26) |
 | Startup on aarch64 | ✅ (validated under Xvfb) |
 | Startup on riscv64 | ✅ (CLI mode) |
-| XAdES/PAdES/PKCS#11 signing on both | ✅ |
+| XAdES/PAdES/PKCS#11 signing on both | ✅ with PKCS#12/SoftHSM stores |
+| DNIe hardware signing on the boards | ⏳ needs a graphical `pinentry` (VNC) |
 
 ## 4.1 Note on `pdfsig`
 

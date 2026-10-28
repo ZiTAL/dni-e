@@ -26,8 +26,15 @@ pkcs11-provider 1.2.0 (invalid key handle); T8 fails headless on the same
 `pinentry` prompt. A VNC session is required to close T7/T8 on the board; see
 `docs/02-aarch64.md` §6.
 
-This is the handover document. Everything is installed and validated up to
-T6; T7–T9 only need the DNIe certificates to be renewed.
+**Update 2026-10-28:** documentation reconciled with the results above
+(`REPORT.md`, `docs/00`, `docs/04`, `docs/05`, `docs/06`). T7 is closed at the
+TLS/PKCS#11 layer with GnuTLS and Chromium (TLS 1.2 + `RSA+SHA256`); the two
+open items are the Firefox empty-certificate bug and the signing PIN prompt on
+the boards. See §2 and the checklist in §8.
+
+This is the handover document. The stack is installed and validated up to T6 on
+both boards; T7 is closed at the TLS layer, T8/T9 on x86-64. Only the two items
+in §2 remain.
 
 ---
 
@@ -46,13 +53,13 @@ T6; T7–T9 only need the DNIe certificates to be renewed.
 Validated without PIN: T1–T6 on both boards, plus 21 shim tests on x86-64,
 aarch64 and riscv64. See `REPORT.md` and `docs/`.
 
-## 2. What is blocked
+## 2. Test status and blockers
 
-| Test | Needs |
+| Test | State |
 |---|---|
-| T7 — TLS authentication on a site | valid certificate + PIN |
-| T8 — PDF signing with Autofirma | valid certificate + PIN |
-| T9 — `C_Sign` through PKCS#11 | valid certificate + PIN |
+| T7 — TLS authentication on a site | ✅ GnuTLS/PKCS#11 and Chromium 155 on TLS 1.2 (x86-64). ❌ Firefox/NSS sends an empty certificate list |
+| T8 — PDF signing with Autofirma | ✅ x86-64 (2026-10-26). ⏳ boards: the signing key needs a graphical `pinentry` |
+| T9 — `C_Sign` through PKCS#11 | ✅ x86-64 (via T8) and ARM64 authentication key (`pkcs11-tool --test`). ⏳ ARM64 signing key: same `pinentry` issue |
 
 The PIN is **not** changed by renewal. It is the one in the DNIe letter.
 **Three wrong attempts block the card.**
@@ -221,7 +228,11 @@ The private key was generated without a passphrase and lives in the local
 - [x] T7: TLS client auth validated with GnuTLS/PKCS#11 (2026-10-26).
 - [ ] T7 (Firefox): GUI reproduces the empty-certificate failure (2026-10-27); needs an NSS/OpenSC fix.
 - [x] T7 (Chromium): client auth with the DNIe completed on TLS 1.2 + `RSA+SHA256` (2026-10-27); TLS 1.3 fails because it requires RSA-PSS. See `docs/10-headless-browser.md` §5.3.
-- [x] T8: PAdES signed on x86-64 (2026-10-26); boards pending.
+- [x] T8: PAdES signed on x86-64 (2026-10-26).
 - [x] T9: `C_Sign` validated on x86-64 (via T8) and on the ARM64 board with
   `pkcs11-tool --test` for the authentication key (2026-10-27).
-- [ ] Update `REPORT.md` and `docs/06-dnie4.md`.
+- [x] Update `REPORT.md` and `docs/06-dnie4.md` (2026-10-28).
+- [ ] T8/T9 on the boards: run Autofirma/`pkcs11-tool --test` with the signing
+  key over Xvfb + VNC (`docs/02-aarch64.md` §6).
+- [ ] T7 in Firefox: trace NSS + OpenSC and document or fix the empty
+  certificate list (`docs/10-headless-browser.md` §5.2).

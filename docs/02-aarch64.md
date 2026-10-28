@@ -2,7 +2,8 @@
 
 **Host:** ARM64 board · Orange Pi 5 · Debian 13 (trixie) · kernel 6.1.115
 **Date:** 2026-10-24
-**Status:** ✅ stack and reader validated (T1–T6, T10); T7–T9 pending the interactive PIN test
+**Status:** ✅ stack and reader validated (T1–T6, T10); T9 green for the
+authentication key. T7/T8 and the signing key need a graphical `pinentry` (VNC)
 
 ---
 

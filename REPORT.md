@@ -1,10 +1,13 @@
 # Autonomous session report
 
-**Date:** 2026-10-24
+**Date:** 2026-10-24, updated 2026-10-28
 **Scope:** deploy and validate the DNIe stack on an ARM64 host (Orange Pi 5) and a RISC-V host (VisionFive 2).
 **Outcome:** both machines have the full stack installed and validated. The
-certificates were renewed on 2026-10-26 (valid until 2028-10-26); T7–T9 are
-pending the PIN tests.
+certificates were renewed on 2026-10-26 (valid until 2028-10-26). T7 is closed
+at the TLS/PKCS#11 layer (GnuTLS and Chromium on TLS 1.2), T8 and T9 are closed
+on x86-64, and T9 is also green on the ARM64 board for the authentication key.
+The Firefox client-certificate path and the boards' signing PIN prompt remain
+open and are tracked in [NEXT-STEPS.md](NEXT-STEPS.md).
 
 ---
 
@@ -22,8 +25,10 @@ pending the PIN tests.
 | PKCS#11 signing | ✅ | ✅ |
 | USB reader | ✅ validated (T1–T6) | ✅ validated (T1–T6) |
 
-**No PIN attempt has been spent.** Everything was tested without a card or with
-laboratory stores (PKCS#12 and SoftHSM).
+**No PIN attempt was spent in the initial session.** Everything was tested
+without a card or with laboratory stores (PKCS#12 and SoftHSM). The later tests
+with the real card (2026-10-26/27) used a PIN verified independently with
+`pkcs15-tool --verify-pin`.
 
 ---
 
@@ -108,9 +113,7 @@ at install time. This makes the shim usable on FHS distributions and on
 non-FHS systems such as Guix and Nix; see `docs/07-portability.md` and
 `guix.scm`.
 
----
-
-## 3. Configurable module paths
+### 3.1 Configurable module paths
 
 `/usr/lib/<tripleta>/` is no longer hardcoded. Precedence:
 
@@ -149,7 +152,7 @@ openjdk-21-jre 21.0.12 · libnss3-tools · xvfb · xauth · softhsm2
 
 ---
 
-## 5. What you need to do
+## 5. Reader, certificates and open items
 
 ### 5.1 USB reader
 
@@ -165,7 +168,17 @@ setup script handles both.
 
 They were **renewed on 2026-10-26** and are valid until **2028-10-26**. The
 renewed dates were confirmed on the card and the three certificates are listed
-by OpenSC, PKCS#11 and NSS. T7–T9 remain pending the PIN tests.
+by OpenSC, PKCS#11 and NSS. The stack reads them without a PIN; T7–T9 are closed
+as described above except for the Firefox UI path and the boards' signing PIN
+prompt.
+
+### 5.3 Open items
+
+| Item | Why it is open | Next action |
+|---|---|---|
+| T7 in Firefox | NSS lists the certificate, prompts for the PIN and then sends an empty Certificate message; Chromium against the same server works | Trace the handshake (`openssl s_server -msg`) and OpenSC (`OPENSC_DEBUG=9`), compare with the Chromium flow (`docs/10-headless-browser.md` §5.2) |
+| T8 on the boards | The signing key is `CKA_ALWAYS_AUTHENTICATE` and `pinentry` cannot prompt headless | Xvfb + x11vnc session (`docs/02-aarch64.md` §6) |
+| TLS 1.3 | RSA-PSS is required and the key only provides `CKM_RSA_PKCS` | Documented limitation; use TLS 1.2 |
 
 ---
 
@@ -214,7 +227,7 @@ Then:
 ## 8. Artifacts
 
 - Repo: `~/dni-e`; copy at `~/dni-e` on both machines.
-- Documentation: `docs/00` to `docs/06`.
+- Documentation: `docs/00` to `docs/10`.
 - Arch shim package: `packaging/arch/`.
 - Debian setup: `scripts/setup-debian.sh`.
 - Tests: `tests/test-shim-paths.sh`, `scripts/verify-*.sh`.
@@ -223,6 +236,7 @@ Then:
 
 ## Handover
 
-The stack is complete up to T6. The only pending work is certificate renewal
-and the T7–T9 validation. See [NEXT-STEPS.md](NEXT-STEPS.md) for the exact
-post-renewal checklist, commands and known risks.
+The stack is complete up to T6 on both boards, and T7–T9 are closed at the
+TLS/PKCS#11 layer. Remaining work: the Firefox client-certificate path, and the
+signing PIN prompt on the boards (VNC). See [NEXT-STEPS.md](NEXT-STEPS.md) for
+the checklist, commands and known risks.

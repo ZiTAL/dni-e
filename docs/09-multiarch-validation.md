@@ -103,8 +103,9 @@ big-endian build and load confirm it.
   **riscv64** only.
 - armv7, ppc64le and s390x have build-level validation; a real card test there
   needs the hardware and a CCID reader.
-- Authentication and signing (T7–T9) are pending the PIN tests; the
-  certificates were renewed on 2026-10-26.
+- Authentication and signing (T7–T9) were validated with the renewed
+  certificates on x86-64 (and T9 on the ARM64 board); they are not part of the
+  cross-build/emulation matrix.
 
 ## 6. Release assets
 
