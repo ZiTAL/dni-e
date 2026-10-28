@@ -26,7 +26,7 @@ jobs:
       - name: ShellCheck
         run: |
           shellcheck -S warning install.sh scripts/*.sh tests/*.sh \
-            packaging/arch/build-local.sh
+            packaging/arch/build-local.sh packaging/debian/build-prebuilt.sh
 
       - name: Shim tests (21 cases)
         run: ./tests/test-shim-paths.sh
@@ -52,7 +52,7 @@ jobs:
       - name: ShellCheck
         run: |
           shellcheck -S warning install.sh scripts/*.sh tests/*.sh \
-            packaging/arch/build-local.sh
+            packaging/arch/build-local.sh packaging/debian/build-prebuilt.sh
 
       - name: Shim tests (21 cases)
         run: ./tests/test-shim-paths.sh

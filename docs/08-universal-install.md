@@ -35,7 +35,9 @@ sudo ./install.sh --system
 
 ### Debian/Ubuntu package
 
-On Debian and derivatives, the release also provides a `.deb`:
+On Debian and derivatives, the release also provides a `.deb` (amd64 and
+arm64; the riscv64 package is built from the cross-compiled shim by the
+release workflow and will be published with the next tag):
 
 ```bash
 sudo apt-get install -y opensc p11-kit pcscd

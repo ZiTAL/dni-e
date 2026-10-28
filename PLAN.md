@@ -275,7 +275,8 @@ documented coexistence with the official module.
 - polkit rule and `plugdev` membership automation.
 - Debian package (`packaging/debian/`) with `Provides`/`Conflicts`.
 - Tag-driven release workflow: cross-built tarballs for x86-64, aarch64,
-  riscv64, armv7, ppc64le and s390x, native `.deb` on x86-64 and ARM64.
+  riscv64, armv7, ppc64le and s390x, native `.deb` on x86-64 and ARM64, and a
+  riscv64 `.deb` assembled from the cross-built shim.
 - Detached GPG signature for `SHA256SUMS` and public key export.
 
 **Deliverable:** `install.sh`, `scripts/setup-browser.sh`,

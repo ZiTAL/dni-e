@@ -63,10 +63,26 @@ jobs:
           export VERSION="${VERSION#v}"
           ./scripts/build-release.sh
 
+      - name: Build riscv64 .deb from the cross-built shim
+        if: matrix.arch == 'riscv64'
+        env:
+          VERSION: ${{ github.event.inputs.version || github.ref_name }}
+        run: |
+          export VERSION="${VERSION#v}"
+          DEB_ARCH=riscv64 SHIM="$PWD/src/pkcs11-shim/libpkcs11-dnie.so" \
+            ./packaging/debian/build-prebuilt.sh
+
       - uses: actions/upload-artifact@v4
         with:
           name: tarball-${{ matrix.arch }}
           path: dist/*.tar.gz
+          if-no-files-found: error
+
+      - uses: actions/upload-artifact@v4
+        if: matrix.arch == 'riscv64'
+        with:
+          name: deb-riscv64
+          path: dist/*.deb
           if-no-files-found: error
 
   debs:

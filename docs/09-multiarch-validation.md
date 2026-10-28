@@ -113,5 +113,9 @@ big-endian build and load confirm it.
 
 - aarch64, riscv64, x86-64 (native builds);
 - armv7l, ppc64le, s390x (cross builds);
-- Debian packages for arm64 and riscv64;
+- Debian packages for amd64, arm64 and riscv64;
 - `SHA256SUMS` plus a detached GPG signature and the public key.
+
+`v0.2.2` did not publish the riscv64 `.deb`. The release workflow now builds
+it from the cross-compiled shim (`packaging/debian/build-prebuilt.sh`), so new
+tags include it again.

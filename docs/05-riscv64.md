@@ -41,27 +41,28 @@ dnie-compat: probando /usr/lib/riscv64-linux-gnu/opensc-pkcs11.so
 
 **Update 2026-10-28:** the board was running `dnie-pkcs11-compat` 0.2.0 from
 the first install. The v0.2.2 release does not publish a riscv64 `.deb` (only
-the tarball), so the package was built on the board from the signed tarball:
+the tarball), so it was assembled from the tarball's cross-compiled shim with
+the same script the release workflow now uses:
 
 ```bash
-cp -a packaging/debian debian
-dpkg-buildpackage -b -us -uc
-sudo dpkg -i ../dnie-pkcs11-compat_0.2.2_riscv64.deb
+VERSION=0.2.2 DEB_ARCH=riscv64 \
+  SHIM=prebuilt/libpkcs11-dnie.so \
+  ./packaging/debian/build-prebuilt.sh
+sudo dpkg -i dist/dnie-pkcs11-compat_0.2.2_riscv64.deb
 ```
 
 Result:
 
 ```text
 package dnie-pkcs11-compat 0.2.2 (dpkg -V clean)
-sha256  5ff018bf99d46e897559a4d02fc669028b08ed390d60ec6a79291c6e6af6f91a
-size    14240 bytes (source build, stripped)
+sha256  642fb0ab42b860eacf10ed70de39013744407ab1cc22780800a63b0842aecd6c
+size    17656 bytes (cross-compiled, not stripped)
 backup  /usr/lib/libpkcs11-dnie.so.0.1.0.bak
 ```
 
-The shim code is unchanged across the 0.2.x releases, so this binary is
-identical to the one that was already installed and with which T9 and T8 were
-validated; the tarball `prebuilt/` binary (17656 bytes, not stripped) was also
-tested and signs correctly.
+The shim code is unchanged across the 0.2.x releases. This is the binary that
+was validated with T9 (signature verified) and T8 (`openssl cms` verification
+successful).
 
 ## 3. polkit and group membership
 
