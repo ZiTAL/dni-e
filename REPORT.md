@@ -88,15 +88,19 @@ OpenSC's DNIe **user-consent** prompt (`dnie_ask_user_consent` → pinentry
 `CKR_FUNCTION_FAILED`. A dedicated `OPENSC_CONF` with
 `user_consent_enabled = false` skips that confirmation; the card PIN is still
 required. `-store dni` (jmulticard) fails headless with `NoConsoleException`;
-the PKCS#11 store is the working path. See `docs/02-aarch64.md` §6.1.
+the PKCS#11 store is the working path. See `docs/02-aarch64.md` §6.1. The
+board's earlier GnuTLS failure was the test server's CA list: with `AC DNIE
+004` advertised, GnuTLS sends the 0e1c-byte certificate and the server returns
+200.
 
 The reader and card were then moved to the RISC-V board and the card tests
 repeated there on 2026-10-28: T9 signs with the signing key (signature
 verified), T8 signs PAdES with Autofirma (`openssl cms` verifies the
 signature), and T7 completes TLS client authentication with GnuTLS 3.8.9. The
 local server received the 0e1c-byte client certificate and returned 200;
-against AEAT the handshake completes and the site returns its own 403. The
-stale OpenSC cache listed the old 2022 certificate IDs until
+against AEAT the handshake completes and the site returns its own 403. T10 was
+repeated with the CI-built 0.2.2 `.deb` (clean remove/install, `dpkg -V`
+clean). The stale OpenSC cache listed the old 2022 certificate IDs until
 `pkcs15-tool --clear-cache`. See `docs/05-riscv64.md` §7.
 
 Chromium 155 with the same OpenSC module **completes** client authentication

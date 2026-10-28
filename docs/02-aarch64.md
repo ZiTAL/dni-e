@@ -2,10 +2,8 @@
 
 **Host:** ARM64 board · Orange Pi 5 · Debian 13 (trixie) · kernel 6.1.115
 **Date:** 2026-10-24, updated 2026-10-28
-**Status:** ✅ T1–T6 and T8–T10 validated on the board, including PAdES signing
-and `C_Sign` with the signing key. T7 is validated on x86-64 with GnuTLS,
-Chromium and Firefox; the board's GnuTLS run fails at the server (check its
-acceptable CA list).
+**Status:** ✅ T1–T10 validated on the board, including GnuTLS client
+authentication, PAdES signing and `C_Sign` with the signing key.
 
 ---
 
@@ -170,7 +168,7 @@ T1–T6 and T10 are green. The PIN was verified with
 |---|---|
 | T9 — `C_Sign`, authentication key | ✅ `pkcs11-tool --test` signs with `KprivAutenticacion`: RSA-PKCS, SHA1/SHA256/RIPEMD160/MD5-RSA-PKCS |
 | T9 — `C_Sign`, signing key | ✅ `SHA256-RSA-PKCS` with `KprivFirmaDigital` on 2026-10-28, 256-byte signature verified against the FIRMA certificate |
-| T7 — TLS with GnuTLS 3.8.9 | ❌ prints “Successfully sent 2 certificate(s)” but sends an empty Certificate message; check the server's acceptable CA list first (`AC DNIE 004`) |
+| T7 — TLS with GnuTLS 3.8.9 | ✅ local TLS 1.2 server that advertises `AC DNIE 004`: the server received the 0e1c-byte client certificate (`depth=0 … AUTENTICACIÓN`) and returned 200 |
 | T7 — TLS with OpenSSL 3.5 + pkcs11-provider 1.2.0 | ❌ `The specified key handle is not valid` on TLS 1.2 (`RSA+SHA256`), `internal_error`/`decrypt_error` on TLS 1.3 |
 | T8 — Autofirma PAdES, `-store pkcs11:…` | ✅ signed on 2026-10-28; `pdfsig`: *Signature is Valid*, signer `… (FIRMA)` |
 
@@ -217,10 +215,11 @@ OPENSC_CONF=/tmp/dnie-t9.conf autofirma-dnie sign -i in.pdf -o signed.pdf \
 `NoConsoleException: No hay consola para solicitar el PIN`; the PKCS#11 store
 is the path that works.
 
-The empty Certificate from GnuTLS can also come from the server: if its
-acceptable CA list does not include `AC DNIE 004`, the client filters the DNIe
-certificate out. Check the server's `-CAfile` before blaming the card; the
-x86-64 run with the DNIe intermediate in the CA list completes.
+The earlier empty Certificate from GnuTLS was the server's CA list: if it does
+not include `AC DNIE 004`, the client filters the DNIe certificate out. On
+2026-10-28 the same board completed the handshake once the local server used
+the DNIe intermediate in `-CAfile` (`<<< … Certificate [0e1c]`, `depth=0 …
+AUTENTICACIÓN`, HTTP 200).
 
 Chromium and Firefox on x86-64 with the same OpenSC module **do** complete the
 handshake when the server uses TLS 1.2 + `RSA+SHA256`; TLS 1.3 requires RSA-PSS

@@ -132,6 +132,7 @@ The reader and card were moved here and the card tests repeated with OpenSC
 | T9 — `C_Sign`, signing key | ✅ `SHA256-RSA-PKCS` with `KprivFirmaDigital`, 256-byte signature, `Verified OK` against the FIRMA certificate |
 | T8 — Autofirma PAdES | ✅ `-store pkcs11:… -alias CertFirmaDigital`; `openssl cms` verifies the signature (see below) |
 | T7 — TLS with GnuTLS 3.8.9 | ✅ local TLS 1.2 server that advertises `AC DNIE 004`: the server received the 0e1c-byte client certificate (`depth=0 … AUTENTICACIÓN`) and returned 200; also completes against AEAT (the site returns its own 403) |
+| T10 — clean package install | ✅ removed and reinstalled `dnie-pkcs11-compat` 0.2.2 from the CI-built `.deb`; `dpkg -V` clean, module loads |
 
 The stale OpenSC cache affected this board too: after the 2026-10-26 renewal
 `pkcs15-tool` still listed the old 2022 IDs until `pkcs15-tool --clear-cache`.

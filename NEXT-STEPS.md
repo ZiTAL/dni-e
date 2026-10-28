@@ -79,7 +79,7 @@ aarch64 and riscv64. See `REPORT.md` and `docs/`.
 
 | Test | State |
 |---|---|
-| T7 — TLS authentication on a site | ✅ GnuTLS/PKCS#11, Chromium and Firefox on TLS 1.2, including GnuTLS on riscv64. Firefox needs the server to advertise the DNIe issuer in its CA list |
+| T7 — TLS authentication on a site | ✅ GnuTLS/PKCS#11, Chromium and Firefox on TLS 1.2, including GnuTLS on aarch64 and riscv64. Firefox needs the server to advertise the DNIe issuer in its CA list |
 | T8 — PDF signing with Autofirma | ✅ x86-64 (2026-10-26), ARM64 and riscv64 (2026-10-28, `-store pkcs11:…`, signature verified) |
 | T9 — `C_Sign` through PKCS#11 | ✅ x86-64 (via T8), ARM64 and riscv64 authentication and signing keys (2026-10-28) |
 
@@ -282,7 +282,8 @@ The private key was generated without a passphrase and lives in the local
 - [x] Insert the card and confirm the new `notAfter` dates (valid until 2028-10-26).
 - [x] Run `verify-card.sh` and `test-nss.sh` on the ARM64 board (2026-10-27).
 - [x] Create/refresh the Firefox profile (`~/.mozilla/dnie-profile`, 2026-10-27).
-- [x] T10: clean package install on the ARM64 board (`0.2.1`, 2026-10-27).
+- [x] T10: clean package install on the ARM64 board (0.2.1, 2026-10-27) and
+  on riscv64 (0.2.2 CI-built `.deb`, 2026-10-28).
 - [x] T7: TLS client auth validated with GnuTLS/PKCS#11 (2026-10-26).
 - [x] T7 (Firefox): client auth validated on x86-64 under Xvfb (automatic and
   chooser, OpenSC and shim, AEAT TLS 1.2); see `docs/10-headless-browser.md`
