@@ -134,7 +134,7 @@ On Debian, `scripts/setup-debian.sh` does all of this.
 
 ```bash
 ./packaging/arch/build-local.sh
-sudo pacman -U packaging/arch/dnie-pkcs11-compat-0.2.2-1-*.pkg.tar.zst
+sudo pacman -U packaging/arch/dnie-pkcs11-compat-0.2.3-1-*.pkg.tar.zst
 ```
 
 ## 8. Known limitations

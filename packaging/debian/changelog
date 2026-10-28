@@ -1,3 +1,17 @@
+dnie-pkcs11-compat (0.2.3) unstable; urgency=medium
+
+  * Release workflow: publish a riscv64 .deb assembled from the cross-compiled
+    shim (packaging/debian/build-prebuilt.sh), so releases include packages for
+    amd64, arm64 and riscv64.
+  * Validation: Firefox client authentication (the site must advertise
+    AC DNIE 004), T7–T9 on x86-64, aarch64 and riscv64, and PAdES plus C_Sign
+    with the signing key on both boards.
+  * Documentation: the DNIe user-consent prompt for signing
+    (user_consent_enabled = false for unattended use), the pdfsig 26.08 false
+    negative, the stale OpenSC cache after renewal, and the CA-list filter.
+
+ -- ZiTAL <2283548+ZiTAL@users.noreply.github.com>  Wed, 28 Oct 2026 21:30:00 +0100
+
 dnie-pkcs11-compat (0.2.2) unstable; urgency=medium
 
   * verify-card.sh clears the OpenSC card cache after certificate renewal.

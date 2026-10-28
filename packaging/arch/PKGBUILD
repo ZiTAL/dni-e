@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Maintainer: dni-e contributors
 pkgname=dnie-pkcs11-compat
-pkgver=0.2.2
+pkgver=0.2.3
 pkgrel=1
 pkgdesc="PKCS#11 compatibility module for the Spanish DNIe (OpenSC-based)"
 arch=('x86_64' 'aarch64' 'riscv64')

@@ -15,8 +15,8 @@ Download the asset for `uname -m` from the
 
 ```bash
 sha256sum -c SHA256SUMS --ignore-missing
-tar xzf dnie-pkcs11-compat-0.2.2-aarch64.tar.gz
-cd dnie-pkcs11-compat-0.2.2-aarch64
+tar xzf dnie-pkcs11-compat-0.2.3-aarch64.tar.gz
+cd dnie-pkcs11-compat-0.2.3-aarch64
 sudo ./install.sh --binary --system
 ```
 
@@ -35,13 +35,12 @@ sudo ./install.sh --system
 
 ### Debian/Ubuntu package
 
-On Debian and derivatives, the release also provides a `.deb` (amd64 and
-arm64; the riscv64 package is built from the cross-compiled shim by the
-release workflow and will be published with the next tag):
+On Debian and derivatives, the release also provides a `.deb` for amd64,
+arm64 and riscv64:
 
 ```bash
 sudo apt-get install -y opensc p11-kit pcscd
-sudo dpkg -i dnie-pkcs11-compat_0.2.2_arm64.deb
+sudo dpkg -i dnie-pkcs11-compat_0.2.3_arm64.deb
 sudo apt-get -f install
 ```
 

@@ -117,5 +117,5 @@ big-endian build and load confirm it.
 - `SHA256SUMS` plus a detached GPG signature and the public key.
 
 `v0.2.2` did not publish the riscv64 `.deb`. The release workflow now builds
-it from the cross-compiled shim (`packaging/debian/build-prebuilt.sh`), so new
-tags include it again.
+it from the cross-compiled shim (`packaging/debian/build-prebuilt.sh`); the
+first release with it is `v0.2.3`.

@@ -37,15 +37,15 @@ From a release tarball (no compiler needed):
 
 ```bash
 sha256sum -c SHA256SUMS --ignore-missing
-tar xzf dnie-pkcs11-compat-0.2.2-aarch64.tar.gz
-cd dnie-pkcs11-compat-0.2.2-aarch64
+tar xzf dnie-pkcs11-compat-0.2.3-aarch64.tar.gz
+cd dnie-pkcs11-compat-0.2.3-aarch64
 sudo ./install.sh --binary --system
 ```
 
 Debian/Ubuntu also have a native package:
 
 ```bash
-sudo dpkg -i dnie-pkcs11-compat_0.2.2_arm64.deb
+sudo dpkg -i dnie-pkcs11-compat_0.2.3_arm64.deb
 ```
 
 From source:

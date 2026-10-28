@@ -1,4 +1,4 @@
-# DNIe on Linux — installation (v0.2.2)
+# DNIe on Linux — installation (v0.2.3)
 
 This document covers the prebuilt packages (aarch64, riscv64, x86-64) and a
 source install. The goal is a working DNIe stack: reader, PKCS#11 module,
@@ -15,12 +15,12 @@ browsers and optional document signing with Autofirma.
 
 | Architecture | Tarball | Debian package |
 |---|---|---|
-| ARM64 | `dnie-pkcs11-compat-0.2.2-aarch64.tar.gz` | `dnie-pkcs11-compat_0.2.2_arm64.deb` |
-| RISC-V 64 | `dnie-pkcs11-compat-0.2.2-riscv64.tar.gz` | — (not published; use the tarball) |
-| x86-64 | `dnie-pkcs11-compat-0.2.2-x86_64.tar.gz` | `dnie-pkcs11-compat_0.2.2_amd64.deb` |
-| ARMv7 (32-bit) | `dnie-pkcs11-compat-0.2.2-armv7l.tar.gz` | — |
-| ppc64le | `dnie-pkcs11-compat-0.2.2-ppc64le.tar.gz` | — |
-| s390x | `dnie-pkcs11-compat-0.2.2-s390x.tar.gz` | — |
+| ARM64 | `dnie-pkcs11-compat-0.2.3-aarch64.tar.gz` | `dnie-pkcs11-compat_0.2.3_arm64.deb` |
+| RISC-V 64 | `dnie-pkcs11-compat-0.2.3-riscv64.tar.gz` | `dnie-pkcs11-compat_0.2.3_riscv64.deb` |
+| x86-64 | `dnie-pkcs11-compat-0.2.3-x86_64.tar.gz` | `dnie-pkcs11-compat_0.2.3_amd64.deb` |
+| ARMv7 (32-bit) | `dnie-pkcs11-compat-0.2.3-armv7l.tar.gz` | — |
+| ppc64le | `dnie-pkcs11-compat-0.2.3-ppc64le.tar.gz` | — |
+| s390x | `dnie-pkcs11-compat-0.2.3-s390x.tar.gz` | — |
 
 Also attached: `SHA256SUMS`, `SHA256SUMS.asc` and `dnie-release-key.asc`.
 
@@ -41,12 +41,11 @@ Key fingerprint: `90E9197F3D36A666A8AF35FB99B38DA239882575`.
 ```bash
 sudo apt-get update
 sudo apt-get install -y opensc p11-kit pcscd
-sudo dpkg -i dnie-pkcs11-compat_0.2.2_arm64.deb
+sudo dpkg -i dnie-pkcs11-compat_0.2.3_arm64.deb
 sudo apt-get -f install
 ```
 
-On RISC-V, v0.2.2 does not publish a `riscv64` `.deb`: use the tarball
-(Option B) or build the package from that tarball with `dpkg-buildpackage`.
+On RISC-V, use the `riscv64` `.deb` or the tarball (Option B).
 The package installs
 `/usr/lib/libpkcs11-dnie.so`, the `libpkcs11-fnmtdnie.so` alias and the p11-kit
 registration. It does not install Autofirma.
@@ -54,8 +53,8 @@ registration. It does not install Autofirma.
 ## Option B — release tarball (no compiler)
 
 ```bash
-tar xzf dnie-pkcs11-compat-0.2.2-aarch64.tar.gz
-cd dnie-pkcs11-compat-0.2.2-aarch64
+tar xzf dnie-pkcs11-compat-0.2.3-aarch64.tar.gz
+cd dnie-pkcs11-compat-0.2.3-aarch64
 sudo ./install.sh --binary --system
 ```
 
