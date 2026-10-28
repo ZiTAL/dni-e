@@ -24,12 +24,13 @@ needs a context-specific PIN and OpenSC's `pinentry` fails on the headless
 board. T7 fails with GnuTLS 3.8.9 (empty Certificate) and with OpenSSL 3.5 +
 pkcs11-provider 1.2.0 (invalid key handle); T8 fails headless on the same
 `pinentry` prompt. A VNC session is required to close T7/T8 on the board; see
-`docs/02-aarch64.md` §6.
+`docs/02-aarch64.md` §6. *(Diagnosis superseded on 2026-10-28: the blocker was
+OpenSC's DNIe user-consent prompt, not a PIN; see the update below.)*
 
 **Update 2026-10-28:** documentation reconciled with the results above
 (`REPORT.md`, `docs/00`, `docs/04`, `docs/05`, `docs/06`). T7 is closed with
-GnuTLS, Chromium (TLS 1.2) and Firefox; the signing PIN prompt on the boards is
-the only open item. See §2 and the checklist in §8.
+GnuTLS, Chromium (TLS 1.2) and Firefox. T8/T9 were still open at that point and
+were closed later the same day on the ARM64 board (next update).
 
 **Update 2026-10-28 (Firefox):** the empty-certificate failure was re-tested
 under Xvfb with Firefox 158.0.1 and OpenSC 0.27.1. Firefox completes client
@@ -38,9 +39,18 @@ real profile, TLS 1.2 with and without `-client_sigalgs`, and against AEAT. The
 empty list is reproducible when the server does not advertise the DNIe issuer
 in its acceptable CA list. See `docs/10-headless-browser.md` §5.2.
 
+**Update 2026-10-28 (T8/T9 on the ARM64 board):** T9 signs with the signing key
+(`SHA256-RSA-PKCS`, signature verified) and T8 signs PAdES with Autofirma
+through the shim; `pdfsig` reports *Signature is Valid*. The blocker was not a
+PIN but OpenSC's DNIe user-consent prompt (`dnie_ask_user_consent`), which
+returns `Not allowed` without a console. Use a dedicated `OPENSC_CONF` with
+`user_consent_enabled = false` for automated signing. `-store dni`
+(jmulticard) still needs a console; use `-store pkcs11:…`. See
+`docs/02-aarch64.md` §6.1.
+
 This is the handover document. The stack is installed and validated up to T6 on
-both boards; T7 is closed at the TLS layer in three clients, T8/T9 on x86-64.
-Only the board signing PIN prompt in §2 remains.
+both boards; T7–T9 are closed on x86-64 and the ARM64 board. The only pending
+card tests are on riscv64, when the reader is available.
 
 ---
 
@@ -64,8 +74,8 @@ aarch64 and riscv64. See `REPORT.md` and `docs/`.
 | Test | State |
 |---|---|
 | T7 — TLS authentication on a site | ✅ GnuTLS/PKCS#11, Chromium and Firefox on TLS 1.2. Firefox needs the server to advertise the DNIe issuer in its CA list |
-| T8 — PDF signing with Autofirma | ✅ x86-64 (2026-10-26). ⏳ boards: the signing key needs a graphical `pinentry` |
-| T9 — `C_Sign` through PKCS#11 | ✅ x86-64 (via T8) and ARM64 authentication key (`pkcs11-tool --test`). ⏳ ARM64 signing key: same `pinentry` issue |
+| T8 — PDF signing with Autofirma | ✅ x86-64 (2026-10-26) and ARM64 (2026-10-28, `-store pkcs11:…`, PAdES valid) |
+| T9 — `C_Sign` through PKCS#11 | ✅ x86-64 (via T8), ARM64 authentication key, and ARM64 signing key (2026-10-28) |
 
 The PIN is **not** changed by renewal. It is the one in the DNIe letter.
 **Three wrong attempts block the card.**
@@ -143,14 +153,39 @@ Graphical: launch `autofirma-dnie`, choose **Firmar**, select a PDF, choose
 Headless:
 
 ```bash
-autofirma-dnie sign -i input.pdf -o signed.pdf -format pades \
-  -store 'pkcs11:/usr/lib/libpkcs11-dnie.so' -password "$PIN"
+OPENSC_CONF=/tmp/dnie-headless.conf \
+autofirma-dnie sign -i input.pdf -o signed.pdf -format pades -algorithm sha256 \
+  -store 'pkcs11:/usr/lib/libpkcs11-dnie.so' \
+  -alias CertFirmaDigital -password "$PIN"
 ```
+
+The config file disables the DNIe user-consent popup for automated signing:
+
+```ini
+app default {
+	card_driver dnie {
+		user_consent_enabled = false;
+	}
+}
+```
+
+Use `autofirma-dnie listaliases -store pkcs11:/usr/lib/libpkcs11-dnie.so` to
+see the aliases. `-store dni` (jmulticard) needs a console for the PIN and
+fails headless.
 
 ### Step 5 — T9, PKCS#11 signing (optional)
 
 ```bash
 pkcs11-tool --module /usr/lib/libpkcs11-dnie.so --login --pin "$PIN" --test
+```
+
+For the signing key (which triggers the user-consent check), use a dedicated
+config and sign explicit data:
+
+```bash
+OPENSC_CONF=/tmp/dnie-headless.conf pkcs11-tool \
+  --module /usr/lib/libpkcs11-dnie.so --sign --login \
+  --id 4630… --mechanism SHA256-RSA-PKCS -i data -o data.sig
 ```
 
 Do not use this to guess the PIN.
@@ -192,8 +227,9 @@ sudo dpkg -i dnie-pkcs11-compat_0.2.2_arm64.deb
 |---|---|
 | Reader re-enumerates (`LIBUSB_ERROR_IO`) | Reset the USB port and restart `pcscd` (see `docs/02-aarch64.md`) |
 | Firefox profile has no module | Run `make-firefox-profile.sh` or `setup-browser.sh` after the first launch |
-| Headless browser asks for the PIN | Not scriptable; use `openssl s_client` with PKCS#11 or Xvfb + VNC |
+| Headless browser asks for the PIN | Not scriptable with a supported API; use `openssl s_client` with PKCS#11, or Xvfb + VNC/XTEST |
 | Autofirma shows no certificates | Autofirma not restarted, or the reader is unresponsive |
+| `C_Sign` fails with `CKR_FUNCTION_FAILED` headless | OpenSC asks for user consent before signing; use `user_consent_enabled = false` in a dedicated config (`docs/02-aarch64.md` §6.1) |
 | OpenSC cannot sign with DNIe 4.0 | Phase F6: APDU trace + `jmulticard` reference + patch |
 | riscv64 browser automation | No usable Chromium; Firefox headless works, TLS test via OpenSSL |
 
@@ -242,9 +278,10 @@ The private key was generated without a passphrase and lives in the local
   §5.2. The 2026-10-27 empty list is reproducible only when the server's CA
   list lacks `AC DNIE 004`.
 - [x] T7 (Chromium): client auth with the DNIe completed on TLS 1.2 + `RSA+SHA256` (2026-10-27); TLS 1.3 fails because it requires RSA-PSS. See `docs/10-headless-browser.md` §5.3.
-- [x] T8: PAdES signed on x86-64 (2026-10-26).
-- [x] T9: `C_Sign` validated on x86-64 (via T8) and on the ARM64 board with
-  `pkcs11-tool --test` for the authentication key (2026-10-27).
+- [x] T8: PAdES signed on x86-64 (2026-10-26) and on the ARM64 board
+  (2026-10-28, `-store pkcs11:…`, `pdfsig` valid).
+- [x] T9: `C_Sign` validated on x86-64 (via T8), on the ARM64 board with
+  `pkcs11-tool --test` for the authentication key, and on the ARM64 board with
+  the signing key (2026-10-28, signature verified).
 - [x] Update `REPORT.md` and `docs/06-dnie4.md` (2026-10-28).
-- [ ] T8/T9 on the boards: run Autofirma/`pkcs11-tool --test` with the signing
-  key over Xvfb + VNC (`docs/02-aarch64.md` §6).
+- [ ] Repeat the card tests on riscv64 when the reader is available.

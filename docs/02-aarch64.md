@@ -1,9 +1,11 @@
 # 02 — aarch64 (Orange Pi 5)
 
 **Host:** ARM64 board · Orange Pi 5 · Debian 13 (trixie) · kernel 6.1.115
-**Date:** 2026-10-24
-**Status:** ✅ stack and reader validated (T1–T6, T10); T9 green for the
-authentication key. T7/T8 and the signing key need a graphical `pinentry` (VNC)
+**Date:** 2026-10-24, updated 2026-10-28
+**Status:** ✅ T1–T6 and T8–T10 validated on the board, including PAdES signing
+and `C_Sign` with the signing key. T7 is validated on x86-64 with GnuTLS,
+Chromium and Firefox; the board's GnuTLS run fails at the server (check its
+acceptable CA list).
 
 ---
 
@@ -144,7 +146,7 @@ Java 21:
 
 Autofirma shows the real DNIe certificates once they are valid and the card responds.
 
-## 6. T7–T9 on the headless board (2026-10-27)
+## 6. T7–T9 on the headless board (2026-10-27/28)
 
 T1–T6 and T10 are green. The PIN was verified with
 `pkcs15-tool --verify-pin` and `pkcs11-tool --login`; the card is not blocked.
@@ -152,25 +154,63 @@ T1–T6 and T10 are green. The PIN was verified with
 | Test | Result |
 |---|---|
 | T9 — `C_Sign`, authentication key | ✅ `pkcs11-tool --test` signs with `KprivAutenticacion`: RSA-PKCS, SHA1/SHA256/RIPEMD160/MD5-RSA-PKCS |
-| T9 — `C_Sign`, signing key | ❌ requires a context-specific PIN (`CKA_ALWAYS_AUTHENTICATE`); OpenSC invokes `pinentry` and fails headless with `pinentry-curses: Assuan processing failed: Broken pipe` |
-| T7 — TLS with GnuTLS 3.8.9 | ❌ prints “Successfully sent 2 certificate(s)” but sends an empty Certificate message; the server logs `peer did not return a certificate` |
+| T9 — `C_Sign`, signing key | ✅ `SHA256-RSA-PKCS` with `KprivFirmaDigital` on 2026-10-28, 256-byte signature verified against the FIRMA certificate |
+| T7 — TLS with GnuTLS 3.8.9 | ❌ prints “Successfully sent 2 certificate(s)” but sends an empty Certificate message; check the server's acceptable CA list first (`AC DNIE 004`) |
 | T7 — TLS with OpenSSL 3.5 + pkcs11-provider 1.2.0 | ❌ `The specified key handle is not valid` on TLS 1.2 (`RSA+SHA256`), `internal_error`/`decrypt_error` on TLS 1.3 |
-| T8 — Autofirma | ❌ headless: `java.awt.HeadlessException`; under `xvfb-run` it reaches the signing key and fails at the same pinentry prompt |
+| T8 — Autofirma PAdES, `-store pkcs11:…` | ✅ signed on 2026-10-28; `pdfsig`: *Signature is Valid*, signer `… (FIRMA)` |
 
-The card, the PIN and `C_Sign` are fine: the failures are in the headless TLS
-tools and in the context-specific PIN prompt. A graphical session (VNC) where
-`pinentry` can ask for the PIN is required to close T7/T8 on this board. See
-`docs/10-headless-browser.md` §5.2 for the equivalent Firefox result.
+### 6.1 Signing key: user consent, not a PIN prompt
+
+The signing key works, but OpenSC's DNIe driver calls
+`dnie_ask_user_consent()` before `PERFORM SECURITY OPERATION`: it spawns
+`pinentry` with the `CONFIRM` command ("Signature Requested … ¿Desea permitir
+esta operación?"). Without a console or display it returns `-1209 (Not
+allowed)`, which `C_SignFinal` reports as `CKR_FUNCTION_FAILED`. This is what
+looked like a context-specific PIN failure.
+
+For automated/headless signing, use a dedicated OpenSC config:
+
+```ini
+app default {
+	card_driver dnie {
+		user_consent_enabled = false;
+	}
+}
+```
+
+and export `OPENSC_CONF=/path/to/that-file` for the signing process only. The
+card PIN is still required; only the OpenSC confirmation popup is skipped.
+Keep the default (consent enabled) for interactive desktop signing.
+
+T9 on the board:
+
+```bash
+OPENSC_CONF=/tmp/dnie-t9.conf pkcs11-tool --module /usr/lib/libpkcs11-dnie.so \
+  --sign --login --id 4630… --mechanism SHA256-RSA-PKCS \
+  -i data -o data.sig
+```
+
+T8 on the board (no X server needed):
+
+```bash
+OPENSC_CONF=/tmp/dnie-t9.conf autofirma-dnie sign -i in.pdf -o signed.pdf \
+  -format pades -algorithm sha256 -store pkcs11:/usr/lib/libpkcs11-dnie.so \
+  -alias CertFirmaDigital -password "$PIN"
+```
+
+`-store dni` (jmulticard) still fails headless with
+`NoConsoleException: No hay consola para solicitar el PIN`; the PKCS#11 store
+is the path that works.
 
 The empty Certificate from GnuTLS can also come from the server: if its
 acceptable CA list does not include `AC DNIE 004`, the client filters the DNIe
 certificate out. Check the server's `-CAfile` before blaming the card; the
 x86-64 run with the DNIe intermediate in the CA list completes.
 
-Chromium on x86-64 with the same OpenSC module **does** complete the handshake
-when the server uses TLS 1.2 + `RSA+SHA256`; TLS 1.3 requires RSA-PSS and the
-DNIe key only provides `CKM_RSA_PKCS` (`docs/10-headless-browser.md` §5.3).
-That is the reference browser configuration for the DNIe.
+Chromium and Firefox on x86-64 with the same OpenSC module **do** complete the
+handshake when the server uses TLS 1.2 + `RSA+SHA256`; TLS 1.3 requires RSA-PSS
+and the DNIe key only provides `CKM_RSA_PKCS`
+(`docs/10-headless-browser.md` §5.2–5.3).
 
 ## 7. Reproduce
 

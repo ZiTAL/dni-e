@@ -17,18 +17,19 @@ RISC-V 64, without depending on the official `libpkcs11-dnie.so`
 | F1 — Component matrix | ✅ |
 | F2 — Base stack on aarch64 | ✅ T1–T6 validated with the real card |
 | F3 — PKCS#11 shim | ✅ x86-64, aarch64 and riscv64 |
-| F4 — Autofirma | ✅ XAdES/PAdES signing on both architectures |
+| F4 — Autofirma | ✅ XAdES/PAdES signing on both architectures, including PAdES with the DNIe on aarch64 |
 | F5 — riscv64 | ✅ T1–T6 validated with the real card |
 | F6 — DNIe 4.0 coverage | ✅ `C_Sign` and authentication validated with the 4.0 card |
 | F7 — Packaging | 🟡 Arch package ready; Debian package built in CI |
-| F8 — Validation and docs | 🟡 T1–T6/T10 on both boards; T7 via GnuTLS, Chromium and Firefox on TLS 1.2; T8 pending a VNC session |
+| F8 — Validation and docs | 🟡 T1–T6/T10 on both boards; T7–T9 on x86-64 and aarch64 (GnuTLS, Chromium, Firefox, Autofirma) |
 
 **Known limitations:** TLS 1.3 client authentication requires RSA-PSS, which
 the DNIe key does not provide; use TLS 1.2 (Chromium:
 `--ssl-version-max=tls1.2`). Firefox sends an empty certificate when the site's
 acceptable CA list does not include `AC DNIE 004`; with the DNIe issuer
-advertised it works. Autofirma's signing key needs a context-specific PIN and a
-graphical `pinentry`, so signing on a headless board requires VNC.
+advertised it works. Signing with the DNIe signing key triggers OpenSC's
+user-consent prompt; for unattended signing use `user_consent_enabled = false`
+in a dedicated OpenSC config (the card PIN is still required).
 
 ## Install (any Linux, any architecture)
 

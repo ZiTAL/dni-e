@@ -295,8 +295,8 @@ tests pass; no architecture-specific code.
 | T4 | `pkcs15-tool --list-certificates` (3 certs) | ✅ | ✅ | ✅ | no |
 | T5 | `pkcs11-tool -L/-O` through the shim | ✅ | ✅ | ✅ | no |
 | T6 | Firefox lists the certificates | | ✅ | ✅ | no |
-| T7 | TLS authentication on a site | ✅ | | | **yes** |
-| T8 | PDF signing with Autofirma | ✅ | | | **yes** |
+| T7 | TLS authentication on a site | ✅ | ⚠️ | | **yes** |
+| T8 | PDF signing with Autofirma | ✅ | ✅ | | **yes** |
 | T9 | Signing through PKCS#11 (`C_Sign`) | ✅ | ✅ | | **yes** |
 | T10 | Clean install from package | | ✅ | | no |
 
@@ -305,9 +305,16 @@ PKCS#11; the Firefox UI client-certificate path is still under investigation.
 T8 and T9 were validated through Autofirma/PKCS#11 on x86-64.
 
 **Result (2026-10-27):** on the ARM64 board, T1–T6 and T10 pass (clean
-`dpkg` install of 0.2.1); T7–T9 still need the interactive PIN test. The board
-was showing the pre-renewal certificates from a stale OpenSC cache; see
-`docs/02-aarch64.md` §4.
+`dpkg` install of 0.2.1). The board was showing the pre-renewal certificates
+from a stale OpenSC cache; see `docs/02-aarch64.md` §4.
+
+**Result (2026-10-28, ARM64 board):** T9 signs with the signing key
+(`SHA256-RSA-PKCS`, signature verified against the FIRMA certificate) and T8
+signs PAdES with Autofirma through the shim (`pdfsig`: signature valid). The
+headless blocker was OpenSC's DNIe user-consent prompt, not the PIN; a
+dedicated config with `user_consent_enabled = false` removes it. See
+`docs/02-aarch64.md` §6.1. T7 on the board still fails in GnuTLS/OpenSSL; the
+server's acceptable CA list must include `AC DNIE 004`.
 
 **Result (2026-10-27, Firefox GUI):** with the correct PIN (verified with
 `pkcs15-tool --verify-pin` and `pkcs11-tool --login`), Firefox listed the DNIe
@@ -330,7 +337,8 @@ Certificate message) and with OpenSSL 3.5 + pkcs11-provider 1.2.0 (invalid key
 handle / decrypt error); T8 fails headless on the same `pinentry` prompt. The
 card and PIN are fine; see `docs/02-aarch64.md` §6. The GnuTLS empty
 Certificate may be the server's CA list (it must advertise `AC DNIE 004`);
-this was confirmed on x86-64 on 2026-10-28.
+this was confirmed on x86-64 on 2026-10-28. *(The signing-key diagnosis was
+superseded on 2026-10-28: the blocker is the user-consent prompt, not a PIN.)*
 
 **Result (2026-10-27, Chromium):** Chromium 155 + OpenSC completes TLS client
 authentication with the DNIe when the server uses TLS 1.2 and requests
@@ -494,7 +502,8 @@ dni-e/
 ## 13. Definition of Done
 
 - [ ] T1–T6 and T10 green on aarch64 and riscv64.
-- [ ] T7–T9 green with valid certificates.
+- [x] T7–T9 green with valid certificates on x86-64 and aarch64.
+- [ ] T7–T9 repeated on riscv64 with the reader.
 - [ ] Installable and reproducible packages on both architectures.
 - [ ] The shim does not break existing x86-64 installations.
 - [ ] Documentation sufficient for a third party to repeat it.

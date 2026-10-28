@@ -4,8 +4,8 @@
 **Phase:** F6
 **Status:** 🟢 the contact interface is covered: PIN login, `C_Sign` and TLS
 client authentication work with the renewed 4.0 card (valid until 2028-10-26)
-in GnuTLS, Chromium and Firefox. The only open item is the signing PIN prompt
-on the boards, which needs a graphical `pinentry` (VNC).
+in GnuTLS, Chromium and Firefox, and Autofirma signs PAdES on x86-64 and
+ARM64.
 
 ---
 
@@ -101,10 +101,13 @@ and verifies it against the card.
 | Firefox 158 + OpenSC, TLS 1.2, server advertises `AC DNIE 004` | ✅ automatic selection and chooser (x86-64, 2026-10-28) |
 | Firefox against a server whose CA list lacks the DNIe issuer | ❌ empty Certificate, no PIN prompt |
 
-The signing key (`KprivFirmaDigital`) is flagged `CKA_ALWAYS_AUTHENTICATE`, so
-OpenSC opens a `pinentry` dialog for the signing operation. On a headless board
-that dialog cannot be answered; use Xvfb + VNC. The authentication key signs
-without a second prompt: `pkcs11-tool --test` passes on the ARM64 board.
+The signing key works on the ARM64 board too (SHA256-RSA-PKCS, verified
+signature) and Autofirma signs PAdES with it. The apparent "PIN prompt" was
+OpenSC's DNIe **user-consent** dialog (`dnie_ask_user_consent`, pinentry
+`CONFIRM`): headless it returns `Not allowed`, which surfaces as
+`CKR_FUNCTION_FAILED`. A dedicated OpenSC config with
+`user_consent_enabled = false` (for automated signing only) removes it; the
+card PIN is still required. See `docs/02-aarch64.md` §6.1.
 See `docs/10-headless-browser.md` §5.2–5.3 and `docs/02-aarch64.md` §6.
 
 ## 6. Criteria to close F6
@@ -115,8 +118,8 @@ See `docs/10-headless-browser.md` §5.2–5.3 and `docs/02-aarch64.md` §6.
 | Certificate listing | ✅ |
 | PIN login | ✅ (2026-10-26) |
 | PKCS#11 signing (`C_Sign`), authentication key | ✅ ARM64 board, RSA-PKCS + SHA1/SHA256/RIPEMD160/MD5 (2026-10-27) |
-| PKCS#11 signing (`C_Sign`), signing key | ✅ via Autofirma on x86-64 (2026-10-26); boards need VNC |
-| Autofirma with the same PIN | ✅ x86-64 (2026-10-26); boards need VNC |
+| PKCS#11 signing (`C_Sign`), signing key | ✅ ARM64 board with a consent-free OpenSC config (2026-10-28); x86-64 via Autofirma |
+| Autofirma with the same PIN | ✅ x86-64 and ARM64 (PAdES, 2026-10-28) |
 | TLS client authentication | ✅ GnuTLS, Chromium and Firefox on TLS 1.2 |
 
 F6 is closed for the contact interface. If an operation regresses, the order of

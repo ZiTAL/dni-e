@@ -212,10 +212,29 @@ is the faithful browser test on a headless board.
 Autofirma has a CLI and can use a PKCS#11 token:
 
 ```bash
-autofirma-dnie sign -i input.pdf -o signed.pdf -format pades \
+OPENSC_CONF=/tmp/dnie-headless.conf \
+autofirma-dnie sign -i input.pdf -o signed.pdf -format pades -algorithm sha256 \
   -store 'pkcs11:/usr/lib/libpkcs11-dnie.so' \
-  -password "$PIN"
+  -alias CertFirmaDigital -password "$PIN"
 ```
+
+`-alias` is required; `autofirma-dnie listaliases -store pkcs11:…` prints
+`CertAutenticacion` and `CertFirmaDigital`. The signing key triggers OpenSC's
+DNIe **user-consent** prompt (`Signature Requested … ¿Desea permitir esta
+operación?`). Headless it fails as `CKR_FUNCTION_FAILED`, so the config file
+must contain:
+
+```ini
+app default {
+	card_driver dnie {
+		user_consent_enabled = false;
+	}
+}
+```
+
+This skips only the confirmation popup, not the card PIN. Keep the default for
+interactive desktop signing. `-store dni` (jmulticard) still needs a console
+for the PIN and fails headless with `NoConsoleException`.
 
 The PIN on the command line is visible in `ps` and shell history. Prefer the
 VNC session for interactive use, or run this from a private shell with history
@@ -234,7 +253,7 @@ Three wrong PIN attempts block the card. Do not use these commands to guess.
 
 - Certificates were renewed on 2026-10-26 (valid until 2028-10-26). T7 is
   closed with GnuTLS, Chromium (TLS 1.2) and Firefox; T8/T9 are closed on
-  x86-64. The signing PIN prompt on the boards is still open.
+  x86-64 and on the ARM64 board.
 - A server that does not advertise the DNIe issuer in its acceptable CA list
   makes Firefox send an empty certificate without asking for the PIN.
 - Playwright's bundled Firefox is not available for every architecture; the

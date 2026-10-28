@@ -4,10 +4,10 @@
 **Scope:** deploy and validate the DNIe stack on an ARM64 host (Orange Pi 5) and a RISC-V host (VisionFive 2).
 **Outcome:** both machines have the full stack installed and validated. The
 certificates were renewed on 2026-10-26 (valid until 2028-10-26). T7 is closed
-with GnuTLS, Chromium (TLS 1.2) and Firefox, T8 and T9 are closed on x86-64,
-and T9 is also green on the ARM64 board for the authentication key. The only
-open item is the signing PIN prompt on the boards, which needs a graphical
-`pinentry` (VNC); see [NEXT-STEPS.md](NEXT-STEPS.md).
+with GnuTLS, Chromium (TLS 1.2) and Firefox; T8 and T9 are closed on x86-64 and
+on the ARM64 board, including `C_Sign` with the signing key and PAdES with
+Autofirma. TLS 1.3 and servers that do not advertise the DNIe CA remain the
+documented limitations; see [NEXT-STEPS.md](NEXT-STEPS.md).
 
 ---
 
@@ -73,12 +73,21 @@ file used by that test server is the main suspect. See
 
 On the ARM64 board the same day, T9 was validated directly on the
 authentication key: `pkcs11-tool --test` signed with `KprivAutenticacion`
-using RSA-PKCS and its SHA1/SHA256/RIPEMD160/MD5 variants. The signing key
-requires a context-specific PIN (`CKA_ALWAYS_AUTHENTICATE`) and OpenSC's
-`pinentry` cannot prompt on the headless board. T7 with the GnuTLS 3.8.9 and
-OpenSSL 3.5 + pkcs11-provider 1.2.0 clients also fails at the TLS layer
-(empty Certificate message / invalid key handle), while the card, the PIN and
-`C_Sign` work. See `docs/02-aarch64.md` §6.
+using RSA-PKCS and its SHA1/SHA256/RIPEMD160/MD5 variants. T7 with the GnuTLS
+3.8.9 and OpenSSL 3.5 + pkcs11-provider 1.2.0 clients also fails at the TLS
+layer (empty Certificate message / invalid key handle), while the card, the
+PIN and `C_Sign` work. See `docs/02-aarch64.md` §6.
+
+On 2026-10-28 the board completed T9 with the **signing** key
+(`SHA256-RSA-PKCS`, 256-byte signature verified against the FIRMA
+certificate) and T8 with Autofirma (PAdES signed through the shim and OpenSC;
+`pdfsig` reports *Signature is Valid*). The apparent headless PIN failure was
+OpenSC's DNIe **user-consent** prompt (`dnie_ask_user_consent` → pinentry
+`CONFIRM`), which returns `Not allowed` without a console and surfaces as
+`CKR_FUNCTION_FAILED`. A dedicated `OPENSC_CONF` with
+`user_consent_enabled = false` skips that confirmation; the card PIN is still
+required. `-store dni` (jmulticard) fails headless with `NoConsoleException`;
+the PKCS#11 store is the working path. See `docs/02-aarch64.md` §6.1.
 
 Chromium 155 with the same OpenSC module **completes** client authentication
 with the DNIe when the test server is forced to TLS 1.2 and requests
@@ -165,16 +174,16 @@ setup script handles both.
 
 They were **renewed on 2026-10-26** and are valid until **2028-10-26**. The
 renewed dates were confirmed on the card and the three certificates are listed
-by OpenSC, PKCS#11 and NSS. The stack reads them without a PIN; T7–T9 are closed
-except for the boards' signing PIN prompt.
+by OpenSC, PKCS#11 and NSS. The stack reads them without a PIN; T7–T9 are
+closed on x86-64 and on the ARM64 board.
 
 ### 5.3 Open items
 
 | Item | Why it is open | Next action |
 |---|---|---|
-| T8 on the boards | The signing key is `CKA_ALWAYS_AUTHENTICATE` and `pinentry` cannot prompt headless | Xvfb + x11vnc session (`docs/02-aarch64.md` §6) |
 | TLS 1.3 | RSA-PSS is required and the key only provides `CKM_RSA_PKCS` | Documented limitation; use TLS 1.2 |
 | Servers without the DNIe CA | If the acceptable CA list lacks `AC DNIE 004`, Firefox sends an empty certificate and asks for no PIN | Use a CA list with the DNIe issuer; see `docs/10-headless-browser.md` §5.2 |
+| riscv64 card tests | The reader and card were on the ARM64 board; T7–T9 were not repeated on VisionFive 2 | Repeat the board procedure when the reader is available (`docs/02-aarch64.md` §6) |
 
 ---
 
@@ -232,6 +241,7 @@ Then:
 
 ## Handover
 
-The stack is complete up to T6 on both boards, and T7–T9 are closed at the
-TLS/PKCS#11 layer. Remaining work: the signing PIN prompt on the boards (VNC).
-See [NEXT-STEPS.md](NEXT-STEPS.md) for the checklist, commands and known risks.
+The stack is complete up to T6 on both boards, and T7–T9 are closed on x86-64
+and on the ARM64 board. Remaining work: repeat the card tests on riscv64 when
+the reader is available. See [NEXT-STEPS.md](NEXT-STEPS.md) for the checklist,
+commands and known risks.
