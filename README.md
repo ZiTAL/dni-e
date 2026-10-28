@@ -21,13 +21,14 @@ RISC-V 64, without depending on the official `libpkcs11-dnie.so`
 | F5 — riscv64 | ✅ T1–T6 validated with the real card |
 | F6 — DNIe 4.0 coverage | ✅ `C_Sign` and authentication validated with the 4.0 card |
 | F7 — Packaging | 🟡 Arch package ready; Debian package built in CI |
-| F8 — Validation and docs | 🟡 T1–T6/T10 on both boards; T7 via Chromium with TLS 1.2; T8 pending a VNC session; Firefox client-cert issue documented |
+| F8 — Validation and docs | 🟡 T1–T6/T10 on both boards; T7 via GnuTLS, Chromium and Firefox on TLS 1.2; T8 pending a VNC session |
 
-**Known limitations:** Firefox lists the DNIe certificate but sends an empty
-certificate list (NSS/OpenSC). TLS 1.3 client authentication requires RSA-PSS,
-which the DNIe key does not provide; use TLS 1.2 (Chromium:
-`--ssl-version-max=tls1.2`). Autofirma's signing key needs a context-specific
-PIN and a graphical `pinentry`, so signing on a headless board requires VNC.
+**Known limitations:** TLS 1.3 client authentication requires RSA-PSS, which
+the DNIe key does not provide; use TLS 1.2 (Chromium:
+`--ssl-version-max=tls1.2`). Firefox sends an empty certificate when the site's
+acceptable CA list does not include `AC DNIE 004`; with the DNIe issuer
+advertised it works. Autofirma's signing key needs a context-specific PIN and a
+graphical `pinentry`, so signing on a headless board requires VNC.
 
 ## Install (any Linux, any architecture)
 
@@ -94,7 +95,8 @@ chromium --ssl-version-max=tls1.2 https://www1.agenciatributaria.gob.es
 
 TLS 1.3 requires RSA-PSS for RSA client certificates, while the DNIe/OpenSC
 key only provides `CKM_RSA_PKCS`, so the connection must use TLS 1.2. Firefox
-currently lists the certificate but sends an empty list; see
+also works when the site advertises the DNIe issuer (`AC DNIE 004`) in its
+acceptable CA list; otherwise it filters the certificate out; see
 [docs/10-headless-browser.md](docs/10-headless-browser.md) §5.2–5.3.
 
 ## Quick verification

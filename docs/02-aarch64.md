@@ -162,6 +162,11 @@ tools and in the context-specific PIN prompt. A graphical session (VNC) where
 `pinentry` can ask for the PIN is required to close T7/T8 on this board. See
 `docs/10-headless-browser.md` §5.2 for the equivalent Firefox result.
 
+The empty Certificate from GnuTLS can also come from the server: if its
+acceptable CA list does not include `AC DNIE 004`, the client filters the DNIe
+certificate out. Check the server's `-CAfile` before blaming the card; the
+x86-64 run with the DNIe intermediate in the CA list completes.
+
 Chromium on x86-64 with the same OpenSC module **does** complete the handshake
 when the server uses TLS 1.2 + `RSA+SHA256`; TLS 1.3 requires RSA-PSS and the
 DNIe key only provides `CKM_RSA_PKCS` (`docs/10-headless-browser.md` §5.3).

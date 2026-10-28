@@ -65,9 +65,8 @@ false negatives.
 | `CertCAIntermediaDGP` | 2014-06-13 | 2029-06-13 | ✅ valid |
 
 **Consequence:** T1–T6 are validated. With the renewed certificates T7 was
-closed at the TLS/PKCS#11 layer (GnuTLS and Chromium on TLS 1.2), and T8/T9 on
-x86-64; the Firefox client-certificate path and the boards' PIN prompts remain
-open.
+closed with GnuTLS, Chromium and Firefox on TLS 1.2, and T8/T9 on x86-64; the
+signing PIN prompt on the boards remains open.
 
 ## 4. Services and configuration
 
@@ -96,5 +95,5 @@ pcscd.socket   enabled + active
 
 - Define the aarch64 and riscv64 boards (done: Orange Pi 5 and VisionFive 2).
 - Renew certificates to close T7–T9 (done 2026-10-26; T7–T9 closed at the
-  TLS/PKCS#11 layer, Firefox and the boards' PIN prompts still open).
+  TLS/PKCS#11 layer, the boards' signing PIN prompt still open).
 - Obtain (optional) a DNIe 3.0 for cross-testing with DNIe 4.0.

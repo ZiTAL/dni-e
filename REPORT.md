@@ -4,10 +4,10 @@
 **Scope:** deploy and validate the DNIe stack on an ARM64 host (Orange Pi 5) and a RISC-V host (VisionFive 2).
 **Outcome:** both machines have the full stack installed and validated. The
 certificates were renewed on 2026-10-26 (valid until 2028-10-26). T7 is closed
-at the TLS/PKCS#11 layer (GnuTLS and Chromium on TLS 1.2), T8 and T9 are closed
-on x86-64, and T9 is also green on the ARM64 board for the authentication key.
-The Firefox client-certificate path and the boards' signing PIN prompt remain
-open and are tracked in [NEXT-STEPS.md](NEXT-STEPS.md).
+with GnuTLS, Chromium (TLS 1.2) and Firefox, T8 and T9 are closed on x86-64,
+and T9 is also green on the ARM64 board for the authentication key. The only
+open item is the signing PIN prompt on the boards, which needs a graphical
+`pinentry` (VNC); see [NEXT-STEPS.md](NEXT-STEPS.md).
 
 ---
 
@@ -58,20 +58,18 @@ a false negative because the DNIe signing certificate uses
 T7 was validated at the TLS layer on the x86-64 workstation: `scripts/test-tls-auth.sh`
 used GnuTLS with the DNIe authentication certificate and private key (PKCS#11),
 the client sent both certificates and the handshake completed
-(`RESULT: TLS client authentication OK`). Firefox's certificate manager lists
-the DNIe correctly, but its client-auth path did not send the certificate in
-our tests; that remains a browser-side issue.
+(`RESULT: TLS client authentication OK`).
 
-On 2026-10-27 the Firefox path was reproduced in a graphical session with the
-renewed card and the correct PIN (verified independently with
-`pkcs15-tool --verify-pin` and `pkcs11-tool --login`): Firefox shows the DNIe
-authentication certificate in its certificate chooser and prompts for the
-device PIN, but after the PIN is accepted it sends an **empty** certificate
-list (server: `peer did not return a certificate`). A control test with local
-software certificates — one with `extendedKeyUsage=clientAuth` and one without
-any EKU — is sent and verified by the same server, so the server and Firefox's
-client-auth path are sound. The failure is specific to the OpenSC/DNIe token
-path, not to the card, the PIN or the test server.
+On 2026-10-27 a Firefox session showed the DNIe certificate in the chooser and
+then sent an **empty** certificate list after the PIN. On 2026-10-28 the same
+machine, card and PIN were tested again and Firefox completed the handshake
+with OpenSC and with the shim, using automatic selection and the chooser, with
+a fresh profile and with a copy of the real profile, and against AEAT at TLS
+1.2. The empty list is reproducible when the server's acceptable CA list does
+not contain the DNIe issuer: NSS then filters the certificate out and does not
+ask for the PIN. The exact 2026-10-27 sequence could not be reproduced; the CA
+file used by that test server is the main suspect. See
+`docs/10-headless-browser.md` §5.2.
 
 On the ARM64 board the same day, T9 was validated directly on the
 authentication key: `pkcs11-tool --test` signed with `KprivAutenticacion`
@@ -87,10 +85,9 @@ with the DNIe when the test server is forced to TLS 1.2 and requests
 `RSA+SHA256` (PKCS#1 v1.5). The server verified the client certificate to
 `AC DNIE 004` and the page loaded. On the default TLS 1.3 server Chromium
 fails with `ERR_SSL_CLIENT_AUTH_NO_COMMON_ALGORITHMS`, because TLS 1.3
-requires RSA-PSS and the DNIe key only provides `CKM_RSA_PKCS`. Firefox
-against the same TLS 1.2 server still sends an empty Certificate message, so
-the remaining browser issue is Firefox-specific; Chromium is the working
-browser path on x86-64.
+requires RSA-PSS and the DNIe key only provides `CKM_RSA_PKCS`. Firefox does
+the same on TLS 1.2 once the server advertises the DNIe issuer; both browsers
+are working paths on x86-64 (`docs/10-headless-browser.md` §5.2–5.3).
 
 The PKCS#11 test is the important one: it is exactly the path the DNIe will use
 (Autofirma → PKCS#11 module → card). It was done with SoftHSM because there is
@@ -169,16 +166,15 @@ setup script handles both.
 They were **renewed on 2026-10-26** and are valid until **2028-10-26**. The
 renewed dates were confirmed on the card and the three certificates are listed
 by OpenSC, PKCS#11 and NSS. The stack reads them without a PIN; T7–T9 are closed
-as described above except for the Firefox UI path and the boards' signing PIN
-prompt.
+except for the boards' signing PIN prompt.
 
 ### 5.3 Open items
 
 | Item | Why it is open | Next action |
 |---|---|---|
-| T7 in Firefox | NSS lists the certificate, prompts for the PIN and then sends an empty Certificate message; Chromium against the same server works | Trace the handshake (`openssl s_server -msg`) and OpenSC (`OPENSC_DEBUG=9`), compare with the Chromium flow (`docs/10-headless-browser.md` §5.2) |
 | T8 on the boards | The signing key is `CKA_ALWAYS_AUTHENTICATE` and `pinentry` cannot prompt headless | Xvfb + x11vnc session (`docs/02-aarch64.md` §6) |
 | TLS 1.3 | RSA-PSS is required and the key only provides `CKM_RSA_PKCS` | Documented limitation; use TLS 1.2 |
+| Servers without the DNIe CA | If the acceptable CA list lacks `AC DNIE 004`, Firefox sends an empty certificate and asks for no PIN | Use a CA list with the DNIe issuer; see `docs/10-headless-browser.md` §5.2 |
 
 ---
 
@@ -237,6 +233,5 @@ Then:
 ## Handover
 
 The stack is complete up to T6 on both boards, and T7–T9 are closed at the
-TLS/PKCS#11 layer. Remaining work: the Firefox client-certificate path, and the
-signing PIN prompt on the boards (VNC). See [NEXT-STEPS.md](NEXT-STEPS.md) for
-the checklist, commands and known risks.
+TLS/PKCS#11 layer. Remaining work: the signing PIN prompt on the boards (VNC).
+See [NEXT-STEPS.md](NEXT-STEPS.md) for the checklist, commands and known risks.

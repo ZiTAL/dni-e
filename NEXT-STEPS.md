@@ -27,14 +27,20 @@ pkcs11-provider 1.2.0 (invalid key handle); T8 fails headless on the same
 `docs/02-aarch64.md` §6.
 
 **Update 2026-10-28:** documentation reconciled with the results above
-(`REPORT.md`, `docs/00`, `docs/04`, `docs/05`, `docs/06`). T7 is closed at the
-TLS/PKCS#11 layer with GnuTLS and Chromium (TLS 1.2 + `RSA+SHA256`); the two
-open items are the Firefox empty-certificate bug and the signing PIN prompt on
-the boards. See §2 and the checklist in §8.
+(`REPORT.md`, `docs/00`, `docs/04`, `docs/05`, `docs/06`). T7 is closed with
+GnuTLS, Chromium (TLS 1.2) and Firefox; the signing PIN prompt on the boards is
+the only open item. See §2 and the checklist in §8.
+
+**Update 2026-10-28 (Firefox):** the empty-certificate failure was re-tested
+under Xvfb with Firefox 158.0.1 and OpenSC 0.27.1. Firefox completes client
+authentication with OpenSC and with the shim, automatic and chooser, fresh and
+real profile, TLS 1.2 with and without `-client_sigalgs`, and against AEAT. The
+empty list is reproducible when the server does not advertise the DNIe issuer
+in its acceptable CA list. See `docs/10-headless-browser.md` §5.2.
 
 This is the handover document. The stack is installed and validated up to T6 on
-both boards; T7 is closed at the TLS layer, T8/T9 on x86-64. Only the two items
-in §2 remain.
+both boards; T7 is closed at the TLS layer in three clients, T8/T9 on x86-64.
+Only the board signing PIN prompt in §2 remains.
 
 ---
 
@@ -57,7 +63,7 @@ aarch64 and riscv64. See `REPORT.md` and `docs/`.
 
 | Test | State |
 |---|---|
-| T7 — TLS authentication on a site | ✅ GnuTLS/PKCS#11 and Chromium 155 on TLS 1.2 (x86-64). ❌ Firefox/NSS sends an empty certificate list |
+| T7 — TLS authentication on a site | ✅ GnuTLS/PKCS#11, Chromium and Firefox on TLS 1.2. Firefox needs the server to advertise the DNIe issuer in its CA list |
 | T8 — PDF signing with Autofirma | ✅ x86-64 (2026-10-26). ⏳ boards: the signing key needs a graphical `pinentry` |
 | T9 — `C_Sign` through PKCS#11 | ✅ x86-64 (via T8) and ARM64 authentication key (`pkcs11-tool --test`). ⏳ ARM64 signing key: same `pinentry` issue |
 
@@ -111,6 +117,11 @@ Option A, with a graphical session (or Xvfb + VNC, see
 1. Open a site that requests a certificate (Cl@ve, AEAT, Seguridad Social).
 2. Choose the DNIe certificate.
 3. Enter the PIN.
+
+If Firefox sends an empty certificate and does not ask for the PIN, check that
+the site's acceptable CA list contains `AC DNIE 004`; NSS filters the DNIe
+certificate out otherwise (`docs/10-headless-browser.md` §5.2). TLS 1.3 also
+fails because the key does not support RSA-PSS; force TLS 1.2 if needed.
 
 Option B, fully headless, with OpenSSL and PKCS#11:
 
@@ -226,7 +237,10 @@ The private key was generated without a passphrase and lives in the local
 - [x] Create/refresh the Firefox profile (`~/.mozilla/dnie-profile`, 2026-10-27).
 - [x] T10: clean package install on the ARM64 board (`0.2.1`, 2026-10-27).
 - [x] T7: TLS client auth validated with GnuTLS/PKCS#11 (2026-10-26).
-- [ ] T7 (Firefox): GUI reproduces the empty-certificate failure (2026-10-27); needs an NSS/OpenSC fix.
+- [x] T7 (Firefox): client auth validated on x86-64 under Xvfb (automatic and
+  chooser, OpenSC and shim, AEAT TLS 1.2); see `docs/10-headless-browser.md`
+  §5.2. The 2026-10-27 empty list is reproducible only when the server's CA
+  list lacks `AC DNIE 004`.
 - [x] T7 (Chromium): client auth with the DNIe completed on TLS 1.2 + `RSA+SHA256` (2026-10-27); TLS 1.3 fails because it requires RSA-PSS. See `docs/10-headless-browser.md` §5.3.
 - [x] T8: PAdES signed on x86-64 (2026-10-26).
 - [x] T9: `C_Sign` validated on x86-64 (via T8) and on the ARM64 board with
@@ -234,5 +248,3 @@ The private key was generated without a passphrase and lives in the local
 - [x] Update `REPORT.md` and `docs/06-dnie4.md` (2026-10-28).
 - [ ] T8/T9 on the boards: run Autofirma/`pkcs11-tool --test` with the signing
   key over Xvfb + VNC (`docs/02-aarch64.md` §6).
-- [ ] T7 in Firefox: trace NSS + OpenSC and document or fix the empty
-  certificate list (`docs/10-headless-browser.md` §5.2).

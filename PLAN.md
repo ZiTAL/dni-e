@@ -310,11 +310,17 @@ was showing the pre-renewal certificates from a stale OpenSC cache; see
 `docs/02-aarch64.md` §4.
 
 **Result (2026-10-27, Firefox GUI):** with the correct PIN (verified with
-`pkcs15-tool --verify-pin` and `pkcs11-tool --login`), Firefox lists the DNIe
-authentication certificate, prompts for the PIN and then sends an empty
-certificate list. Software certificates work against the same server, so T7
-remains closed at the TLS/PKCS#11 layer and the Firefox UI path is a separate
-NSS/OpenSC issue (`docs/10-headless-browser.md` §5.2).
+`pkcs15-tool --verify-pin` and `pkcs11-tool --login`), Firefox listed the DNIe
+authentication certificate, prompted for the PIN and then sent an empty
+certificate list. Software certificates worked against the same server.
+
+**Result (2026-10-28, Firefox):** not reproduced with Firefox 158.0.1 and
+OpenSC 0.27.1. Firefox completes client authentication with OpenSC and with
+the shim, automatic selection and chooser, fresh profile and a copy of the
+real profile, TLS 1.2 with and without `-client_sigalgs`, and against AEAT.
+The empty list is reproducible when the server's acceptable CA list does not
+include `AC DNIE 004`: NSS filters the certificate out and asks for no PIN.
+T7 is closed in Firefox (`docs/10-headless-browser.md` §5.2).
 
 **Result (2026-10-27, ARM64 board):** T9 passes for the authentication key:
 `pkcs11-tool --test` signs with `KprivAutenticacion` (RSA-PKCS and the
@@ -322,14 +328,17 @@ SHA1/SHA256/RIPEMD160/MD5 variants). The signing key needs a context-specific
 PIN and OpenSC's `pinentry` fails headless. T7 fails with GnuTLS 3.8.9 (empty
 Certificate message) and with OpenSSL 3.5 + pkcs11-provider 1.2.0 (invalid key
 handle / decrypt error); T8 fails headless on the same `pinentry` prompt. The
-card and PIN are fine; see `docs/02-aarch64.md` §6.
+card and PIN are fine; see `docs/02-aarch64.md` §6. The GnuTLS empty
+Certificate may be the server's CA list (it must advertise `AC DNIE 004`);
+this was confirmed on x86-64 on 2026-10-28.
 
 **Result (2026-10-27, Chromium):** Chromium 155 + OpenSC completes TLS client
 authentication with the DNIe when the server uses TLS 1.2 and requests
 `RSA+SHA256` (PKCS#1 v1.5). TLS 1.3 fails with
 `ERR_SSL_CLIENT_AUTH_NO_COMMON_ALGORITHMS` because it requires RSA-PSS and the
-DNIe key only provides `CKM_RSA_PKCS`. Firefox still sends an empty certificate
-against the same TLS 1.2 server; see `docs/10-headless-browser.md` §5.3.
+DNIe key only provides `CKM_RSA_PKCS`. Firefox also completes the handshake
+when the server advertises `AC DNIE 004`; see `docs/10-headless-browser.md`
+§5.3.
 
 **Golden rule:** T1–T6 and T10 do not spend PIN attempts. T7–T9 only with a
 verified PIN and valid certificates. Never automate PIN attempts: 3 failures

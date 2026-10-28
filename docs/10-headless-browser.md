@@ -14,11 +14,12 @@ what can and cannot be automated with the DNIe.
 | Load the PKCS#11 module in a profile | ✅ |
 | T6 — list the DNIe certificates | ✅ |
 | Client-certificate flow with a **software** certificate | ✅ |
-| T7 with the **DNIe** | ❌ the hardware-token PIN is a native dialog |
+| T7 with the **DNIe** | ⚠️ the hardware-token PIN is a native dialog: needs Xvfb + VNC, or XTEST injection against a virtual display |
 
 Firefox, Chromium, Playwright and Selenium all reach the same wall: the PKCS#11
 token PIN is requested by NSS through a native dialog. There is no supported API
-to type it from an automation script.
+to type it from an automation script; on a virtual display it can be injected
+with `xdotool` (XTEST), as done for the Firefox validation in §5.2.
 
 ## 2. Verified results
 
@@ -99,28 +100,48 @@ RESULT: TLS client authentication OK
 The local server's chain warning is only because it lacks the root
 `AC RAIZ DNIE 2`; the client authentication itself is valid.
 
-### 5.2 Verified: Firefox GUI still sends an empty certificate list
+### 5.2 Firefox: validated, and why an empty certificate can appear
 
-On 2026-10-27 the flow was repeated in a graphical session (Firefox 158, the
-real card and the correct PIN):
+On 2026-10-27 a graphical session (Firefox 158, real card, correct PIN) showed
+the DNIe certificate in the chooser and then sent an **empty** certificate
+list. On 2026-10-28 the same machine and card were tested again, and Firefox
+completed client authentication in every configuration tried:
 
-1. Firefox opens its certificate chooser and lists
-   `BILBAO BARTUREN, IBAN (AUTENTICACIÓN)` from `DNI electrónico`.
-2. The DNIe PIN dialog appears. The PIN was verified independently with
-   `pkcs15-tool --verify-pin` and `pkcs11-tool --login`, so it is correct.
-3. After the PIN is accepted, Firefox sends an **empty** certificate list; the
-   server logs `peer did not return a certificate`.
+| Configuration | Result |
+|---|---|
+| OpenSC direct, `security.default_personal_cert = Select Automatically` | ✅ |
+| OpenSC direct, chooser (`Ask Every Time`) with a software certificate present | ✅ |
+| Shim `libpkcs11-dnie.so` → OpenSC, automatic and chooser | ✅ |
+| Copy of the user's real profile (`AutoFirma ROOT` + OpenSC) | ✅ |
+| Server with `-client_sigalgs RSA+SHA256` and with the default TLS 1.2 list | ✅ |
+| Real site: `https://www1.agenciatributaria.gob.es/` (TLS 1.2) | ✅ TLS client auth; the site returns its own 403 identity page |
 
-Control test: software certificates imported into the same profile — one with
-`extendedKeyUsage=clientAuth` and one without EKU — are sent and verified by
-the same server (`depth=0 CN=test-client`, `verify return:1`). So the test
-server, the CA trust and Firefox's client-auth path are sound; the failure is
-specific to the OpenSC/DNIe token.
+In the successful runs the server receives the client `Certificate`
+(0e1c bytes), `ClientKeyExchange` and `CertificateVerify`, and OpenSC logs
+`C_Login` and `C_Sign = CKR_OK`. The AEAT 403 is an application-level
+"identification error" page: the TLS handshake and the client certificate were
+accepted.
 
-The PKCS#11 objects look consistent: the private key `KprivAutenticacion` and
-the certificate `CertAutenticacion` share the same CKA_ID, the key only has
-sign/signRecover usage, and no `always authenticate` flag is reported. This is
-an NSS/Firefox + OpenSC interaction to investigate, not a card or PIN issue.
+**Reproducible cause of an empty list: the server's acceptable CA list.**
+NSS filters the client certificate before asking for the PIN when the
+`CertificateRequest` does not advertise the DNIe issuer. With a server that
+uses only a test CA:
+
+```bash
+openssl s_server -accept 8444 -cert srv.crt -key srv.key \
+  -Verify 1 -CAfile test-ca.pem -tls1_2 -www        # no AC DNIE 004
+```
+
+Firefox sends an empty `Certificate` (`peer did not return a certificate`) and
+never opens the PIN dialog. With `-CAfile` containing the DNIe intermediate
+(`CertCAIntermediaDGP`, CN=AC DNIE 004) the handshake completes.
+
+The exact 2026-10-27 failure (chooser, then PIN, then empty list) could not be
+reproduced. The CA file used by that test server is the main suspect: a CA list
+without AC DNIE 004 produces the same server message. To check a server, run
+`openssl s_server` with the DNIe intermediate in `-CAfile`, or compare with
+Chromium against the same endpoint.
+
 Use `scripts/check-pin.sh` to confirm the PIN and the private objects without
 exposing the PIN.
 
@@ -157,10 +178,9 @@ On the default TLS 1.3 server, Chromium fails with
 client certificates, while the DNIe/OpenSC key only provides
 `CKM_RSA_PKCS`. Forcing TLS 1.2 removes that restriction.
 
-Firefox, against the same TLS 1.2 server, still offers the certificate and PIN
-dialog but sends an empty Certificate message. The remaining problem is
-specific to Firefox/NSS + OpenSC; Chromium is the working browser path on
-x86-64.
+Firefox, against a TLS 1.2 server whose acceptable CA list contains
+`AC DNIE 004`, also completes the handshake; see §5.2. Chromium remains the
+easier browser to automate.
 
 The `--ssl-version-max=tls1.2` flag was verified locally: with it Chromium
 negotiates TLS 1.2 (server log shows `write key exchange` / `write server
@@ -213,9 +233,10 @@ Three wrong PIN attempts block the card. Do not use these commands to guess.
 ## 8. Caveats
 
 - Certificates were renewed on 2026-10-26 (valid until 2028-10-26). T7 is
-  closed at the TLS layer with GnuTLS and Chromium (TLS 1.2), and T8/T9 on
-  x86-64; the Firefox empty-certificate issue and the boards' signing PIN
-  prompt are still open.
+  closed with GnuTLS, Chromium (TLS 1.2) and Firefox; T8/T9 are closed on
+  x86-64. The signing PIN prompt on the boards is still open.
+- A server that does not advertise the DNIe issuer in its acceptable CA list
+  makes Firefox send an empty certificate without asking for the PIN.
 - Playwright's bundled Firefox is not available for every architecture; the
   tests use the system Chromium through `executablePath`.
 - On riscv64 there is no usable Chromium package in Debian trixie; Firefox
