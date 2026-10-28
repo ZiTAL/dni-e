@@ -16,7 +16,7 @@ browsers and optional document signing with Autofirma.
 | Architecture | Tarball | Debian package |
 |---|---|---|
 | ARM64 | `dnie-pkcs11-compat-0.2.2-aarch64.tar.gz` | `dnie-pkcs11-compat_0.2.2_arm64.deb` |
-| RISC-V 64 | `dnie-pkcs11-compat-0.2.2-riscv64.tar.gz` | `dnie-pkcs11-compat_0.2.2_riscv64.deb` |
+| RISC-V 64 | `dnie-pkcs11-compat-0.2.2-riscv64.tar.gz` | — (not published; use the tarball) |
 | x86-64 | `dnie-pkcs11-compat-0.2.2-x86_64.tar.gz` | `dnie-pkcs11-compat_0.2.2_amd64.deb` |
 | ARMv7 (32-bit) | `dnie-pkcs11-compat-0.2.2-armv7l.tar.gz` | — |
 | ppc64le | `dnie-pkcs11-compat-0.2.2-ppc64le.tar.gz` | — |
@@ -45,7 +45,9 @@ sudo dpkg -i dnie-pkcs11-compat_0.2.2_arm64.deb
 sudo apt-get -f install
 ```
 
-Use `riscv64` on RISC-V. The package installs
+On RISC-V, v0.2.2 does not publish a `riscv64` `.deb`: use the tarball
+(Option B) or build the package from that tarball with `dpkg-buildpackage`.
+The package installs
 `/usr/lib/libpkcs11-dnie.so`, the `libpkcs11-fnmtdnie.so` alias and the p11-kit
 registration. It does not install Autofirma.
 

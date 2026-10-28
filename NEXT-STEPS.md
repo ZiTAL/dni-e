@@ -244,8 +244,9 @@ sudo dpkg -i dnie-pkcs11-compat_0.2.2_arm64.deb
 ## 6. Release and signature
 
 `v0.2.2` assets: tarballs for aarch64, riscv64, x86-64, armv7l, ppc64le and
-s390x; Debian packages for arm64 and riscv64; `SHA256SUMS`, its signature and
-the public key.
+s390x; Debian packages for amd64 and arm64 (the riscv64 `.deb` was not
+published — use the tarball or build it from it); `SHA256SUMS`, its signature
+and the public key.
 
 ```bash
 gpg --import dnie-release-key.asc
