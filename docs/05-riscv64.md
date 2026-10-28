@@ -19,6 +19,7 @@ With `sudo ./scripts/setup-debian.sh`:
 | `opensc` / `opensc-pkcs11` | 0.26.1-2 |
 | `p11-kit` | 0.25.5-3 |
 | `libnss3-tools` | — |
+| shim `libpkcs11-dnie.so` | 0.2.2 (riscv64 prebuilt, 2026-10-28) |
 
 Service `pcscd.socket`: **active**.
 
@@ -37,6 +38,20 @@ Real resolution:
 dnie-compat: conf=/etc/dnie-compat.conf module=(none) search=(none) multiarch=riscv64-linux-gnu
 dnie-compat: probando /usr/lib/riscv64-linux-gnu/opensc-pkcs11.so
 ```
+
+**Update 2026-10-28:** the board was still running the 0.1.0 build from the
+first install. It was replaced with the signed `v0.2.2` riscv64 prebuilt:
+
+```text
+sha256  642fb0ab42b860eacf10ed70de39013744407ab1cc22780800a63b0842aecd6c
+size    17656 bytes
+backup  /usr/lib/libpkcs11-dnie.so.0.1.0.bak
+```
+
+The tarball and `SHA256SUMS` were verified against the release key. After the
+update, `pkcs11-tool --test` reports no errors, T9 signs with the signing key
+(signature verified) and T8 signs PAdES with Autofirma (`openssl cms`
+verification successful).
 
 ## 3. polkit and group membership
 
